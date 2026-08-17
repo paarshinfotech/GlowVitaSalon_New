@@ -5,10 +5,7 @@ await _db();
 
 export const GET = async () => {
   try {
-    const doctors = await DoctorModel.find({
-      status: "Approved",
-      "subscription.status": "Active"
-    }).select("-password"); // Hide password
+    const doctors = await DoctorModel.find({ status: "Approved" }).select("-password");
 
     return Response.json(doctors, { status: 200 });
   } catch (error) {

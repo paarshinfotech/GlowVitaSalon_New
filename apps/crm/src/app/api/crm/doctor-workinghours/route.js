@@ -77,12 +77,19 @@ export const GET = withSubscriptionCheck(async (req) => {
                     ? convertTo24HourFormat(dayData.hours[0].openTime) : '';
                 const closeTime = dayData.isOpen && dayData.hours && dayData.hours.length > 0
                     ? convertTo24HourFormat(dayData.hours[0].closeTime) : '';
+                
+                const mappedHours = dayData.isOpen && dayData.hours && dayData.hours.length > 0
+                    ? dayData.hours.map(h => ({
+                        openTime: convertTo24HourFormat(h.openTime),
+                        closeTime: convertTo24HourFormat(h.closeTime)
+                    })) : [];
 
                 transformedData.workingHoursArray.push({
                     day: daysMap[dayKey] || dayKey,
                     open: openTime,
                     close: closeTime,
-                    isOpen: dayData.isOpen || false
+                    isOpen: dayData.isOpen || false,
+                    hours: mappedHours
                 });
             } else {
                 // Add default entry if day data doesn't exist

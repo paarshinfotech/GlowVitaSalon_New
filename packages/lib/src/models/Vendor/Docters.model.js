@@ -21,8 +21,9 @@ const doctorSchema = new mongoose.Schema({
   },
   gender: {
     type: String,
-    required: true,
+    required: false,
     trim: true,
+    default: '',
   },
   registrationNumber: {
     type: String,
@@ -32,12 +33,16 @@ const doctorSchema = new mongoose.Schema({
   },
   doctorType: {
     type: String,
-    required: true,
-    enum: ['Physician', 'Surgeon'],
+    trim: true,
+    default: '',
   },
   specialties: [{
     type: String,
     required: true,
+    trim: true,
+  }],
+  subSpecializations: [{
+    type: String,
     trim: true,
   }],
   diseases: [{
@@ -155,6 +160,12 @@ const doctorSchema = new mongoose.Schema({
     type: String, // URL to the uploaded image
     trim: true,
   },
+  gallery: [
+    {
+      type: String, // URLs to the uploaded images
+      default: null,
+    },
+  ],
   qualification: {
     type: String,
     trim: true,
@@ -197,6 +208,14 @@ const doctorSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  assistantEmail: {
+    type: String,
+    trim: true,
+  },
+  assistantGender: {
+    type: String,
+    trim: true,
+  },
   doctorAvailability: {
     type: String,
     required: true,
@@ -226,19 +245,36 @@ const doctorSchema = new mongoose.Schema({
       type: String, // URL to the uploaded document
       default: null,
     },
-    udhayamCert: {
-      type: String,
-      default: null,
-    },
-    shopAct: {
-      type: String,
-      default: null,
-    },
     panCard: {
       type: String,
       default: null,
     },
+    medicalRegCert: {
+      type: String,
+      default: null,
+    },
+    medicalDegreeCert: {
+      type: String,
+      default: null,
+    },
+    clinicDetails: {
+      type: String,
+      default: null,
+    },
     otherDocs: [
+      {
+        type: String,
+        default: null,
+      },
+    ],
+    otherDocsStatus: [
+      {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending",
+      },
+    ],
+    otherDocsAdminRejectionReason: [
       {
         type: String,
         default: null,
@@ -250,17 +286,22 @@ const doctorSchema = new mongoose.Schema({
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
-    udhayamCertStatus: {
-      type: String,
-      enum: ["pending", "approved", "rejected"],
-      default: "pending",
-    },
-    shopActStatus: {
-      type: String,
-      enum: ["pending", "approved", "rejected"],
-      default: "pending",
-    },
     panCardStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    medicalRegCertStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    medicalDegreeCertStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    clinicDetailsStatus: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
@@ -270,15 +311,19 @@ const doctorSchema = new mongoose.Schema({
       type: String,
       default: null,
     },
-    udhayamCertAdminRejectionReason: {
-      type: String,
-      default: null,
-    },
-    shopActAdminRejectionReason: {
-      type: String,
-      default: null,
-    },
     panCardAdminRejectionReason: {
+      type: String,
+      default: null,
+    },
+    medicalRegCertAdminRejectionReason: {
+      type: String,
+      default: null,
+    },
+    medicalDegreeCertAdminRejectionReason: {
+      type: String,
+      default: null,
+    },
+    clinicDetailsAdminRejectionReason: {
       type: String,
       default: null,
     },

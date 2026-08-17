@@ -225,10 +225,10 @@ export const PUT = authMiddlewareAdmin(async (req) => {
     }
 
     // Trigger Notification for Approval if status changed
-    if (body.status) {
+    if (updateData.status) {
       (async () => {
         try {
-          await NotificationService.sendApprovalAlert(id, 'doctor', body.status);
+          await NotificationService.sendApprovalAlert(id, 'doctor', updateData.status);
         } catch (err) {
           console.error('Doctor Approval Notification Error:', err);
         }
@@ -349,10 +349,13 @@ export const PATCH = authMiddlewareAdmin(
       // Check if this is a document status update
       else if (doctorId && documentType && status) {
         const validDocumentTypes = [
-          'aadharCard', 'panCard', 'udhayamCert', 'shopAct'
+          'aadharCard', 'panCard', 'medicalRegCert', 'medicalDegreeCert', 'clinicDetails'
         ];
 
-        if (!validDocumentTypes.includes(documentType)) {
+        // Check if it's an otherDoc index-based key (e.g. otherDoc_0, otherDoc_1)
+        const otherDocMatch = documentType.match(/^otherDoc_(\d+)$/);
+
+        if (!validDocumentTypes.includes(documentType) && !otherDocMatch) {
           return NextResponse.json({ message: "Invalid document type" }, { status: 400 });
         }
 
@@ -364,29 +367,58 @@ export const PATCH = authMiddlewareAdmin(
           return NextResponse.json({ message: "Rejection reason is required" }, { status: 400 });
         }
 
-        const updateData = {
-          [`documents.${documentType}Status`]: status,
-        };
-
-        if (status === 'rejected') {
-          updateData[`documents.${documentType}AdminRejectionReason`] = rejectionReason;
-        } else {
-          updateData[`documents.${documentType}AdminRejectionReason`] = null;
-        }
-
-        const updatedDoctor = await DoctorModel.findByIdAndUpdate(
-          doctorId,
-          { $set: updateData },
-          { new: true }
-        ).select("-password");
-
-        if (!updatedDoctor) {
+        const doctor = await DoctorModel.findById(doctorId);
+        if (!doctor) {
           return NextResponse.json({ message: "Doctor not found" }, { status: 404 });
         }
 
+        if (!doctor.documents) {
+          doctor.documents = {};
+        }
+
+        if (otherDocMatch) {
+          const idx = parseInt(otherDocMatch[1], 10);
+          const otherDocsCount = doctor.documents.otherDocs?.length || 0;
+
+          // Ensure status and reason arrays are initialized
+          if (!doctor.documents.otherDocsStatus) {
+            doctor.documents.otherDocsStatus = [];
+          }
+          if (!doctor.documents.otherDocsAdminRejectionReason) {
+            doctor.documents.otherDocsAdminRejectionReason = [];
+          }
+
+          // Pad arrays to match otherDocsCount
+          while (doctor.documents.otherDocsStatus.length < otherDocsCount) {
+            doctor.documents.otherDocsStatus.push('pending');
+          }
+          while (doctor.documents.otherDocsAdminRejectionReason.length < otherDocsCount) {
+            doctor.documents.otherDocsAdminRejectionReason.push(null);
+          }
+
+          if (idx < otherDocsCount) {
+            doctor.documents.otherDocsStatus[idx] = status;
+            doctor.documents.otherDocsAdminRejectionReason[idx] = status === 'rejected' ? rejectionReason : null;
+          }
+        } else {
+          doctor.documents[`${documentType}Status`] = status;
+          if (status === 'rejected') {
+            doctor.documents[`${documentType}AdminRejectionReason`] = rejectionReason;
+          } else {
+            doctor.documents[`${documentType}AdminRejectionReason`] = null;
+          }
+        }
+
+        doctor.markModified('documents');
+        const updatedDoctor = await doctor.save({ validateModifiedOnly: true });
+
+        const doctorResponse = updatedDoctor.toObject();
+        delete doctorResponse.password;
+        delete doctorResponse.__v;
+
         return NextResponse.json({
           message: `Document ${status} successfully`,
-          doctor: updatedDoctor,
+          doctor: doctorResponse,
         });
       }
 

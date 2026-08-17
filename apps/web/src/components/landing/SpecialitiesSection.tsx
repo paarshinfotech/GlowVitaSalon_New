@@ -4,6 +4,7 @@ import { cn } from "@repo/ui/cn";
 import { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import {
+  Search,
   Heart,
   Brain,
   Eye,
@@ -42,6 +43,7 @@ interface Specialty {
 
 interface SpecialitiesProps {
   specialties: Specialty[];
+  subSpecialties: any[];
 }
 
 function SpecialtyItem({ specialty }: { specialty: Specialty }) {
@@ -84,16 +86,38 @@ function SpecialtyItem({ specialty }: { specialty: Specialty }) {
   );
 }
 
-export function SpecialitiesSection({ specialties }: SpecialitiesProps) {
+// Function to get appropriate icon for subspecialties
+const getSubSpecialtyIcon = (name: string): LucideIcon => {
+  const n = name.toLowerCase();
+  if (n.includes('cosmetology') || n.includes('aesthetic')) return Sparkles;
+  if (n.includes('trichology') || n.includes('hair')) return Scissors;
+  if (n.includes('dermoscopy')) return Search;
+  if (n.includes('laser')) return Zap;
+  if (n.includes('pediat')) return Baby;
+  if (n.includes('venereology')) return Shield;
+  if (n.includes('mycology')) return Bone;
+  if (n.includes('allergy') || n.includes('allergology')) return Heart;
+  if (n.includes('pigment')) return Target;
+  if (n.includes('acne')) return Smile;
+  return Stethoscope;
+};
+
+export function SpecialitiesSection({ specialties, subSpecialties }: SpecialitiesProps) {
   return (
-    <section id="categories" className="py-20 bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <section id="categories" className="pt-5 container mx-auto px-4 sm:px-6 lg:px-8 bg-background pb-[5.5rem]">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight font-headline bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent pb-3 mb-4">
-            Find Specialists by Category
+        <div className="mb-6">
+          <h2
+            className="relative inline-block text-2xl md:text-3xl font-serif font-bold pb-3"
+            style={{ color: '#252B42' }}
+          >
+            Find Your Perfect Medical Specialist
+            <span
+              className="absolute left-0 bottom-0 h-[3px] w-full rounded-full"
+              style={{ background: 'linear-gradient(to right, #252B42 0%, #252B42 40%, transparent 100%)' }}
+            />
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+          <p className="text-black text-xs md:text-sm mt-3 max-w-2xl leading-relaxed">
             Connect with expert doctors across all medical specialties for comprehensive healthcare
           </p>
         </div>
@@ -108,61 +132,87 @@ export function SpecialitiesSection({ specialties }: SpecialitiesProps) {
           ))}
         </div>
 
-        {/* Call to Action */}
-        <div className="text-center mt-16">
-          <p className="text-muted-foreground mb-6">
-            Can't find your specialty? Browse our complete directory
-          </p>
-          <Link 
-            href="/doctors/find-doctor" 
-            className={cn(
-              "inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground",
-              "rounded-md font-medium transition-all duration-300 hover:bg-primary/90 hover:shadow-md"
-            )}
-          >
-            View All Specialties
-            <Target className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
+        {/* Dynamic Sub-Specialities Section */}
+        {subSpecialties && subSpecialties.length > 0 && (
+          <div className="mt-16 pt-10 border-t border-gray-100">
+            <h3 className="text-lg md:text-xl font-serif font-bold text-gray-900 mb-8">
+              Popular Sub-Specialties
+            </h3>
+            <div className="flex gap-6 md:gap-8 overflow-x-auto pb-4 pt-2 justify-start items-start scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+              {subSpecialties.map((sub, i) => {
+                const hasImage = sub.image || sub.imageUrl || (sub.icon && typeof sub.icon === 'string' && (sub.icon.startsWith('http') || sub.icon.startsWith('/') || sub.icon.startsWith('data:')));
+                return (
+                  <Link
+                    key={sub._id || i}
+                    href={`/doctors/find-doctor?specialty=${encodeURIComponent(sub.name)}`}
+                    className="flex flex-col items-center text-center shrink-0 group"
+                    style={{ width: '90px' }}
+                  >
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border border-gray-300 flex items-center justify-center mb-3 bg-white transition-all duration-300 group-hover:border-primary group-hover:shadow-md group-hover:scale-105 overflow-hidden">
+                      {hasImage ? (
+                        <img
+                          src={sub.image || sub.imageUrl || sub.icon}
+                          alt={sub.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Stethoscope className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+                      )}
+                    </div>
+                    <span className="text-[11px] md:text-xs font-medium text-gray-800 group-hover:text-primary transition-colors leading-tight break-words max-w-full">
+                      {sub.name}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
     </section>
   );
 }
 
 // Default export with dynamic data from doctors
 export default function SpecialitiesSectionWithData() {
-  const { data: doctorsData, isLoading, isError } = useGetPublicDoctorsQuery(undefined);
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [subSpecialties, setSubSpecialties] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   
   useEffect(() => {
-    if (doctorsData && doctorsData.length > 0) {
-      // Extract all unique specialties from doctors
-      const specialtiesSet = new Set<string>();
-      doctorsData.forEach((doctor : any) => {
-        if (doctor.specialties && doctor.specialties.length > 0) {
-          doctor.specialties.forEach((specialty : any) => {
-            if (specialty && specialty.trim()) {
-              specialtiesSet.add(specialty.trim());
-            }
-          });
-        } else if (doctor.doctorType && doctor.doctorType.trim()) {
-          specialtiesSet.add(doctor.doctorType.trim());
+    fetch('/api/doctor-superdata')
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch');
         }
+        return res.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          // 1. Filter for main specializations
+          const mainSpecs = data.filter((item: any) => item.type === 'specialization');
+          const specialtyObjects: Specialty[] = mainSpecs.map((item: any) => ({
+            id: item._id || `specialty-${item.name}`,
+            name: item.name,
+            icon: getSpecialtyIcon(item.name),
+            slug: item.name.toLowerCase().replace(/\s+/g, '-'),
+            category: "specialty"
+          }));
+          setSpecialties(specialtyObjects);
+
+          // 2. Filter for sub-specializations
+          const subs = data.filter((item: any) => item.type === 'subSpecialization');
+          setSubSpecialties(subs);
+        }
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error loading doctor specialties and subspecialties from superdata:", err);
+        setIsError(true);
+        setIsLoading(false);
       });
-      
-      // Convert to array and create specialty objects
-      const uniqueSpecialties = Array.from(specialtiesSet);
-      const specialtyObjects: Specialty[] = uniqueSpecialties.map((name, index) => ({
-        id: `specialty-${index}`,
-        name,
-        icon: getSpecialtyIcon(name),
-        slug: name.toLowerCase().replace(/\s+/g, '-'),
-        category: "specialty"
-      }));
-      
-      setSpecialties(specialtyObjects);
-    }
-  }, [doctorsData]);
+  }, []);
   
   // Function to get appropriate icon for specialty
   const getSpecialtyIcon = (specialtyName: string): LucideIcon => {
@@ -199,8 +249,7 @@ export default function SpecialitiesSectionWithData() {
   if (isLoading) {
     // Return loading state with skeleton items
     return (
-      <section className="py-20 bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4 max-w-7xl">
+      <section className="pt-5 container mx-auto px-4 sm:px-6 lg:px-8 bg-background pb-[5.5rem]">
           <div className="text-center mb-16">
             <div className="h-12 bg-muted rounded-lg w-1/2 mx-auto mb-4"></div>
             <div className="h-6 bg-muted rounded-lg w-1/3 mx-auto"></div>
@@ -213,7 +262,6 @@ export default function SpecialitiesSectionWithData() {
               </div>
             ))}
           </div>
-        </div>
       </section>
     );
   }
@@ -221,15 +269,13 @@ export default function SpecialitiesSectionWithData() {
   if (isError) {
     // Return error state
     return (
-      <section className="py-20 bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4 max-w-7xl">
+      <section className="pt-5 container mx-auto px-4 sm:px-6 lg:px-8 bg-background pb-[5.5rem]">
           <div className="text-center">
             <div className="text-red-500 mb-4">Error loading specialties</div>
           </div>
-        </div>
       </section>
     );
   }
 
-  return <SpecialitiesSection specialties={specialties} />;
+  return <SpecialitiesSection specialties={specialties} subSpecialties={subSpecialties} />;
 }

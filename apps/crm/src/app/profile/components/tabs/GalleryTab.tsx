@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@repo/ui/button";
 import { Input } from "@repo/ui/input";
 import { UploadCloud, Eye, Trash2, FileText, X, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
-import { useUpdateVendorProfileMutation, useUpdateSupplierProfileMutation } from '@repo/store/api';
+import { useUpdateVendorProfileMutation, useUpdateSupplierProfileMutation, useUpdateDoctorProfileMutation } from '@repo/store/api';
 import { useCrmAuth } from '@/hooks/useCrmAuth';
 import { toast } from 'sonner';
 
@@ -15,6 +15,7 @@ interface GalleryTabProps {
 export const GalleryTab = ({ gallery, setVendor }: GalleryTabProps) => {
   const [updateVendorProfile] = useUpdateVendorProfileMutation();
   const [updateSupplierProfile] = useUpdateSupplierProfileMutation();
+  const [updateDoctorProfile] = useUpdateDoctorProfileMutation();
   const { role } = useCrmAuth();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -22,7 +23,11 @@ export const GalleryTab = ({ gallery, setVendor }: GalleryTabProps) => {
 
   const handleSave = async () => {
     try {
-      const updateFn = role === 'vendor' ? updateVendorProfile : updateSupplierProfile;
+      const updateFn = role === 'vendor'
+        ? updateVendorProfile
+        : role === 'supplier'
+          ? updateSupplierProfile
+          : updateDoctorProfile;
       const result: any = await updateFn({
         _id: typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('user') || '{}')._id) : undefined,
         gallery: gallery
@@ -103,8 +108,8 @@ export const GalleryTab = ({ gallery, setVendor }: GalleryTabProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Salon Gallery</CardTitle>
-        <CardDescription>Manage your salon's photo gallery.</CardDescription>
+        <CardTitle>{role === 'doctor' ? 'Doctor Gallery' : role === 'supplier' ? 'Supplier Gallery' : 'Salon Gallery'}</CardTitle>
+        <CardDescription>Manage your {role === 'doctor' ? 'clinic' : role === 'supplier' ? 'business' : "salon's"} photo gallery.</CardDescription>
       </CardHeader>
       <CardContent>
         <div

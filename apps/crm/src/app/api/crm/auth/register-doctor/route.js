@@ -29,8 +29,8 @@ export async function POST(req) {
 
     const {
       name, email, phone, password, gender,
-      doctorType, specialties, diseases, experience,
-      registrationNumber, clinicName, clinicAddress,
+      doctorType, specialties, subSpecializations, diseases, experience,
+      qualification, registrationNumber, clinicName, clinicAddress,
       state, city, pincode,
       physicalConsultationStartTime, physicalConsultationEndTime,
       assistantName, assistantContact,
@@ -39,7 +39,7 @@ export async function POST(req) {
     } = body;
 
     // Basic required field validation
-    const requiredFields = ["name", "email", "phone", "password", "registrationNumber", "doctorType"];
+    const requiredFields = ["name", "email", "phone", "password", "registrationNumber"];
     for (const field of requiredFields) {
       if (!body[field]) {
         return NextResponse.json({ message: `Missing required field: ${field}` }, { status: 400 });
@@ -90,27 +90,36 @@ export async function POST(req) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate referral code
-    const referralCode = await generateDoctorReferralCode(name);
+    // Generate referral code using trimmed full name
+    const referralCode = await generateDoctorReferralCode(name.trim());
 
-    // Default location (doctors can update later)
-    const locationData = { lat: 0, lng: 0 };
+    // Use actual location submitted from the form
+    const locationData = body.location && body.location.lat && body.location.lng
+      ? { lat: body.location.lat, lng: body.location.lng }
+      : null;
+
+    if (!locationData) {
+      return NextResponse.json({ message: "Location is required" }, { status: 400 });
+    }
 
     // Assign region based on city/state
     const { assignRegion } = await import("@repo/lib/utils/assignRegion.js");
     const regionId = await assignRegion(city || "N/A", state || "N/A", locationData);
 
-    // Create doctor record
-    const newDoctor = await DoctorModel.create({
-      name,
+    // Create doctor record — use insertOne to bypass cached schema validators
+    // (doctorType is no longer required in the updated schema but may be cached)
+    const doctorDoc = {
+      name: name.trim(),
       email,
       phone,
       password: hashedPassword,
-      gender: gender || "male",
-      doctorType,
+      gender: gender || "",
+      doctorType: "",
       specialties: specialties || [],
+      subSpecializations: subSpecializations || [],
       diseases: diseases || [],
       experience: experience || "0",
+      qualification: qualification || "",
       registrationNumber,
       clinicName: clinicName || "N/A",
       clinicAddress: clinicAddress || "N/A",
@@ -128,6 +137,10 @@ export async function POST(req) {
       referralCode,
       regionId,
       isPhoneVerified: true,
+      status: "Pending",
+      wallet: 0,
+      fcmTokens: [],
+      notificationPreferences: { pushEnabled: true, smsEnabled: true, appointments: true, promotional: true },
       subscription: {
         plan: trialPlan._id,
         status: "Active",
@@ -135,7 +148,13 @@ export async function POST(req) {
         endDate: subscriptionEndDate,
         history: [],
       },
-    });
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastLogin: new Date(),
+    };
+
+    const insertResult = await DoctorModel.collection.insertOne(doctorDoc);
+    const newDoctor = { ...doctorDoc, _id: insertResult.insertedId };
 
     // Handle D2D referral if code was provided
     if (referredByCode && referredByCode.trim() !== "") {
@@ -170,7 +189,7 @@ export async function POST(req) {
     }
 
     // Return success (exclude password)
-    const doctorData = newDoctor.toObject();
+    const doctorData = { ...newDoctor };
     delete doctorData.password;
 
     return NextResponse.json(
