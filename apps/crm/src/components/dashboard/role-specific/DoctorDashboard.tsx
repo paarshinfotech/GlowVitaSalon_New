@@ -27,7 +27,13 @@ import {
   FaTimesCircle,
   FaRupeeSign,
   FaChartLine,
-  FaClock
+  FaClock,
+  FaBriefcase,
+  FaHospital,
+  FaVideo,
+  FaWallet,
+  FaArrowUp,
+  FaArrowDown
 } from "react-icons/fa";
 
 interface DoctorDashboardMetrics {
@@ -41,9 +47,9 @@ interface DoctorDashboardMetrics {
   averageConsultationTime: number;
   patientSatisfaction: number;
   topServices: Array<{
-    name: string;
+    serviceName: string;
     count: number;
-    revenue: number;
+    totalRevenue: number;
   }>;
   recentAppointments: Array<{
     id: string;
@@ -53,6 +59,13 @@ interface DoctorDashboardMetrics {
     time: string;
     status: string;
   }>;
+  totalClinicVisit: number;
+  totalVideoCallConsultation: number;
+  bookingHours: number;
+  totalExpenses: number;
+  totalBusiness: number;
+  profit: number;
+  loss: number;
 }
 
 interface DoctorDashboardProps {
@@ -167,7 +180,7 @@ export default function DoctorDashboard({
     metrics.totalAppointments === 0 &&
     metrics.completedAppointments === 0 &&
     metrics.pendingAppointments === 0 &&
-    metrics.totalRevenue === 0;
+    metrics.totalBusiness === 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -199,6 +212,22 @@ export default function DoctorDashboard({
         {/* Stats Cards - Arranged in sequence per Doctor Dashboard Metric Definition Standard */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 mb-6">
           <StatCard
+            title="Total Business"
+            value={metrics ? formatCurrency(metrics.totalBusiness) : '₹0'}
+            subtitle={hasNoData ? "No data" : "Overall business"}
+            change={hasNoData ? "No data" : "+11.4%"}
+            icon={FaBriefcase}
+            iconColor="text-primary"
+          />
+          <StatCard
+            title="Total Revenue"
+            value={metrics ? formatCurrency(metrics.totalRevenue) : '₹0'}
+            subtitle={hasNoData ? "No data" : "Net earnings"}
+            change={hasNoData ? "No data" : "+10.7%"}
+            icon={FaRupeeSign}
+            iconColor="text-primary"
+          />
+          <StatCard
             title="Total Patients"
             value={metrics ? formatNumber(metrics.totalPatients) : '0'}
             subtitle={hasNoData ? "No data" : "Patient count"}
@@ -214,6 +243,24 @@ export default function DoctorDashboard({
             icon={FaCalendarCheck}
             iconColor="text-primary"
           />
+
+          <StatCard
+            title="Total Clinic Visits"
+            value={metrics ? formatNumber(metrics.totalClinicVisit) : '0'}
+            subtitle={hasNoData ? "No data" : "In-clinic visits"}
+            change={hasNoData ? "No data" : "+9.2%"}
+            icon={FaHospital}
+            iconColor="text-primary"
+          />
+          <StatCard
+            title="Total Video Consultations"
+            value={metrics ? formatNumber(metrics.totalVideoCallConsultation) : '0'}
+            subtitle={hasNoData ? "No data" : "Video consultations"}
+            change={hasNoData ? "No data" : "+14.1%"}
+            icon={FaVideo}
+            iconColor="text-primary"
+          />
+
           <StatCard
             title="Completed"
             value={metrics ? formatNumber(metrics.completedAppointments) : '0'}
@@ -238,28 +285,29 @@ export default function DoctorDashboard({
             icon={FaTimesCircle}
             iconColor="text-primary"
           />
+
           <StatCard
-            title="Total Revenue"
-            value={metrics ? formatCurrency(metrics.totalRevenue) : '₹0'}
-            subtitle={hasNoData ? "No data" : "Overall earnings"}
-            change={hasNoData ? "No data" : "+10.7%"}
-            icon={FaRupeeSign}
-            iconColor="text-primary"
+            title="Profit"
+            value={metrics ? formatCurrency(metrics.profit) : '₹0'}
+            subtitle={hasNoData ? "No data" : "Net profit"}
+            change={hasNoData ? "No data" : "+12.1%"}
+            icon={FaArrowUp}
+            iconColor="text-emerald-500"
           />
           <StatCard
-            title="Today's Revenue"
-            value={metrics ? formatCurrency(metrics.todayRevenue) : '₹0'}
-            subtitle={hasNoData ? "No data" : "Daily earnings"}
-            change={hasNoData ? "No data" : "+5.2%"}
-            icon={FaChartLine}
-            iconColor="text-primary"
+            title="Loss"
+            value={metrics ? formatCurrency(metrics.loss) : '₹0'}
+            subtitle={hasNoData ? "No data" : "Net loss"}
+            change={hasNoData ? "No data" : "-1.4%"}
+            icon={FaArrowDown}
+            iconColor="text-rose-500"
           />
           <StatCard
-            title="Avg Consult Time"
-            value={metrics ? `${Math.round(metrics.averageConsultationTime)} min` : '0 min'}
-            subtitle={hasNoData ? "No data" : "Average duration"}
-            change={hasNoData ? "No data" : "-2.1%"}
-            icon={FaClock}
+            title="Total Expenses"
+            value={metrics ? formatCurrency(metrics.totalExpenses) : '₹0'}
+            subtitle={hasNoData ? "No data" : "Total expenses"}
+            change={hasNoData ? "No data" : "-2.4%"}
+            icon={FaWallet}
             iconColor="text-primary"
           />
         </div>

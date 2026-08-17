@@ -112,7 +112,8 @@ interface ServiceFormModalProps {
 }
 
 const ServiceFormModal = ({ isOpen, onClose, service, type }: ServiceFormModalProps) => {
-  const { user } = useCrmAuth();
+  const { user, role } = useCrmAuth();
+  const isDoctor = role === 'doctor';
   const VENDOR_ID = user?._id;
 
   const [activeTab, setActiveTab] = useState("basic");
@@ -317,7 +318,7 @@ const ServiceFormModal = ({ isOpen, onClose, service, type }: ServiceFormModalPr
     const errors: string[] = [];
     if (!('_id' in formData.category && formData.category._id)) errors.push("Service Category is required.");
     if (!formData.name) errors.push("Service Name is required.");
-    if (!formData.price || Number(formData.price) <= 0) errors.push("Valid Price is required.");
+    if (!formData.price || Number(formData.price) <= 0) errors.push(isDoctor ? "Valid Fee is required." : "Valid Price is required.");
     if (!formData.duration || Number(formData.duration) <= 0) errors.push("Valid Duration is required.");
     if (!formData.description || formData.description.trim() === '') errors.push("Service Description is required.");
 
@@ -377,7 +378,7 @@ const ServiceFormModal = ({ isOpen, onClose, service, type }: ServiceFormModalPr
 
   const handleNextTab = () => {
     if (activeTab === "basic") {
-      setActiveTab("advanced");
+      setActiveTab(isDoctor ? "booking" : "advanced");
     } else if (activeTab === "advanced") {
       setActiveTab("booking");
     }
@@ -477,9 +478,9 @@ const ServiceFormModal = ({ isOpen, onClose, service, type }: ServiceFormModalPr
           placeholder="e.g., A premium haircut experience..."
         />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className={isDoctor ? "grid grid-cols-1 md:grid-cols-3 gap-4" : "grid grid-cols-2 md:grid-cols-4 gap-4"}>
         <div className="space-y-2">
-          <Label htmlFor="price">Price (₹) <span className="text-red-500">*</span></Label>
+          <Label htmlFor="price">{isDoctor ? "Fee (₹)" : "Price (₹)"} <span className="text-red-500">*</span></Label>
           <Input
             id="price"
             name="price"
@@ -489,17 +490,19 @@ const ServiceFormModal = ({ isOpen, onClose, service, type }: ServiceFormModalPr
             onChange={handleInputChange}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="discountedPrice">Discounted Price (₹)</Label>
-          <Input
-            id="discountedPrice"
-            name="discountedPrice"
-            type="number"
-            placeholder="e.g., 450"
-            value={formData.discountedPrice || ""}
-            onChange={handleInputChange}
-          />
-        </div>
+        {!isDoctor && (
+          <div className="space-y-2">
+            <Label htmlFor="discountedPrice">Discounted Price (₹)</Label>
+            <Input
+              id="discountedPrice"
+              name="discountedPrice"
+              type="number"
+              placeholder="e.g., 450"
+              value={formData.discountedPrice || ""}
+              onChange={handleInputChange}
+            />
+          </div>
+        )}
         <div className="space-y-2">
           <Label htmlFor="duration">Duration (minutes) <span className="text-red-500">*</span></Label>
           <Select
@@ -558,13 +561,31 @@ const ServiceFormModal = ({ isOpen, onClose, service, type }: ServiceFormModalPr
           </p>
         )}
       </div>
+      {isDoctor && formErrors.length > 0 && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm font-semibold text-red-600 mb-1 flex items-center">
+            <AlertCircle className="w-4 h-4 mr-1" /> Please fix the following errors:
+          </p>
+          <ul className="list-disc list-inside text-xs text-red-600 space-y-1">
+            {formErrors.map((error, idx) => (
+              <li key={idx}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <DialogFooter className="flex justify-end pt-4">
         <Button variant="outline" onClick={onClose} disabled={isSaving}>
           Cancel
         </Button>
-        <Button onClick={handleNextTab}>
-          Next
-        </Button>
+        {isDoctor ? (
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Service"}
+          </Button>
+        ) : (
+          <Button onClick={handleNextTab}>
+            Next
+          </Button>
+        )}
       </DialogFooter>
     </div>
   );
@@ -791,45 +812,48 @@ const ServiceFormModal = ({ isOpen, onClose, service, type }: ServiceFormModalPr
               {/* Pricing Information */}
               <div>
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 pb-1.5 border-b">
-                  Pricing
+                  {isDoctor ? "Fee Information" : "Pricing"}
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                <div className={isDoctor ? "grid grid-cols-1 gap-x-6 gap-y-2" : "grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2"}>
                   <div className="flex items-start justify-between py-1.5">
-                    <span className="text-sm font-medium text-muted-foreground">Price:</span>
+                    <span className="text-sm font-medium text-muted-foreground">{isDoctor ? "Fee:" : "Price:"}</span>
                     <span className="text-sm font-bold text-primary">₹{service?.price?.toFixed(2) || '0.00'}</span>
                   </div>
-                  <div className="flex items-start justify-between py-1.5">
-                    <span className="text-sm font-medium text-muted-foreground">Discounted Price:</span>
-                    <span className="text-sm font-bold text-primary">
-                      {service?.discountedPrice ? `₹${service.discountedPrice.toFixed(2)}` : 'N/A'}
-                    </span>
-                  </div>
+                  {!isDoctor && (
+                    <div className="flex items-start justify-between py-1.5">
+                      <span className="text-sm font-medium text-muted-foreground">Discounted Price:</span>
+                      <span className="text-sm font-bold text-primary">
+                        {service?.discountedPrice ? `₹${service.discountedPrice.toFixed(2)}` : 'N/A'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Service Features */}
-              <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 pb-1.5 border-b">
-                  Features
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                  <div className="flex items-start justify-between py-1.5">
-                    <span className="text-sm font-medium text-muted-foreground">Online Booking:</span>
-                    <span className="text-sm font-semibold">{service?.onlineBooking ? 'Enabled' : 'Disabled'}</span>
+              {!isDoctor && (
+                <div>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 pb-1.5 border-b">
+                    Features
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+                    <div className="flex items-start justify-between py-1.5">
+                      <span className="text-sm font-medium text-muted-foreground">Online Booking:</span>
+                      <span className="text-sm font-semibold">{service?.onlineBooking ? 'Enabled' : 'Disabled'}</span>
+                    </div>
+                    <div className="flex items-start justify-between py-1.5">
+                      <span className="text-sm font-medium text-muted-foreground">Staff Commission:</span>
+                      <span className="text-sm font-semibold">{service?.commission ? 'Enabled' : 'Disabled'}</span>
+                    </div>
+                    <div className="flex items-start justify-between py-1.5">
+                      <span className="text-sm font-medium text-muted-foreground">Home Service:</span>
+                      <span className="text-sm font-semibold">
+                        {service?.homeService?.available ? `₹${service.homeService.charges || 0}` : 'Not Available'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-start justify-between py-1.5">
-                    <span className="text-sm font-medium text-muted-foreground">Staff Commission:</span>
-                    <span className="text-sm font-semibold">{service?.commission ? 'Enabled' : 'Disabled'}</span>
-                  </div>
-                  <div className="flex items-start justify-between py-1.5">
-                    <span className="text-sm font-medium text-muted-foreground">Home Service:</span>
-                    <span className="text-sm font-semibold">
-                      {service?.homeService?.available ? `₹${service.homeService.charges || 0}` : 'Not Available'}
-                    </span>
-                  </div>
-
                 </div>
-              </div>
+              )}
 
               {/* Description */}
               {service?.description && (
@@ -844,7 +868,7 @@ const ServiceFormModal = ({ isOpen, onClose, service, type }: ServiceFormModalPr
               )}
 
               {/* Add-ons */}
-              {service?.addOns && service.addOns.length > 0 && (
+              {!isDoctor && service?.addOns && service.addOns.length > 0 && (
                 <div>
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 pb-1.5 border-b">
                     Available Add-ons
@@ -895,26 +919,28 @@ const ServiceFormModal = ({ isOpen, onClose, service, type }: ServiceFormModalPr
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-5 pb-5 -mt-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="flex-grow flex flex-col overflow-hidden"
-          >
-            <TabsList className="grid w-full grid-cols-3 mb-6 sticky top-0 bg-background z-10 pt-2">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="advanced">
-                Advanced
-              </TabsTrigger>
-              <TabsTrigger value="booking">
-                Booking
-              </TabsTrigger>
-            </TabsList>
-            <div className="pr-1">
-              <TabsContent value="basic">{renderBasicInfoTab()}</TabsContent>
-              <TabsContent value="advanced">{renderAdvancedTab()}</TabsContent>
-              <TabsContent value="booking">{renderBookingTab()}</TabsContent>
+          {isDoctor ? (
+            <div className="pt-2">
+              {renderBasicInfoTab()}
             </div>
-          </Tabs>
+          ) : (
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="flex-grow flex flex-col overflow-hidden"
+            >
+              <TabsList className="grid w-full grid-cols-3 mb-6 sticky top-0 bg-background z-10 pt-2">
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                <TabsTrigger value="booking">Booking</TabsTrigger>
+              </TabsList>
+              <div className="pr-1">
+                <TabsContent value="basic">{renderBasicInfoTab()}</TabsContent>
+                <TabsContent value="advanced">{renderAdvancedTab()}</TabsContent>
+                <TabsContent value="booking">{renderBookingTab()}</TabsContent>
+              </div>
+            </Tabs>
+          )}
         </div>
         <AddItemModal
           isOpen={isCategoryModalOpen}

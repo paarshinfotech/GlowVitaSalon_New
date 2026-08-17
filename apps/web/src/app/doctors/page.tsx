@@ -477,6 +477,115 @@ export default function DoctorsPage() {
 
       {/* CTA Section */}
       <CtaSection />
+
+      {/* Why Choose GlowVita Doctors Section */}
+      <section className="pt-5 pb-10 container mx-auto px-4 sm:px-6 lg:px-8 bg-background">
+        {/* Header – exact same style as WhyChooseUs landing component */}
+        <div className="flex items-center gap-3 mb-8">
+          <img
+            src="/images/9088d72b-b28a-4c94-989b-1d59377b45f5 1.png"
+            alt="Question bubbles"
+            className="w-12 h-12 flex-shrink-0 object-contain"
+          />
+          <h2
+            className="relative inline-block text-2xl md:text-3xl font-serif font-bold pb-3"
+            style={{ color: "#252B42" }}
+          >
+            Why Customers Choose GlowVita Doctors ?
+            <span
+              className="absolute left-0 bottom-0 h-[3px] w-full rounded-full"
+              style={{
+                background:
+                  "linear-gradient(to right, #252B42 0%, #252B42 40%, transparent 100%)",
+              }}
+            />
+          </h2>
+        </div>
+
+        {/* Row 1 – #FEF0ED stripe */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+          {/* Card 1 – Verified Dermatologists */}
+          <div
+            className="relative flex items-start gap-4 bg-white border border-gray-200 rounded-2xl p-5 overflow-hidden"
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-9 rounded-l-2xl" style={{ backgroundColor: "#FEF0ED" }} />
+            <img src="/images/stethoscope.png" alt="Verified Dermatologists" className="relative w-8 h-8 flex-shrink-0 mt-0.5" />
+            <div className="relative">
+              <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">Verified Dermatologists</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">Every specialist is carefully verified to ensure trusted and quality care.</p>
+            </div>
+          </div>
+
+          {/* Card 2 – Easy Appointment Booking */}
+          <div
+            className="relative flex items-start gap-4 bg-white border border-gray-200 rounded-2xl p-5 overflow-hidden"
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-9 rounded-l-2xl" style={{ backgroundColor: "#FEF0ED" }} />
+            <img src="/images/calendar (6) 1.png" alt="Easy Appointment Booking" className="relative w-8 h-8 flex-shrink-0 mt-0.5" />
+            <div className="relative">
+              <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">Easy Appointment Booking</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">Book appointments online in just a few clicks at your preferred time.</p>
+            </div>
+          </div>
+
+          {/* Card 3 – Verified Patient Reviews */}
+          <div
+            className="relative flex items-start gap-4 bg-white border border-gray-200 rounded-2xl p-5 overflow-hidden"
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-9 rounded-l-2xl" style={{ backgroundColor: "#FEF0ED" }} />
+            <img src="/images/speech-bubble 1.png" alt="Verified Patient Reviews" className="relative w-8 h-8 flex-shrink-0 mt-0.5" />
+            <div className="relative">
+              <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">Verified Patient Reviews</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">Read authentic feedback from patients before choosing a doctor.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2 – #EBF3FD stripe */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Card 4 – Experienced Professionals */}
+          <div
+            className="relative flex items-start gap-4 bg-white border border-gray-200 rounded-2xl p-5 overflow-hidden"
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-9 rounded-l-2xl" style={{ backgroundColor: "#EBF3FD" }} />
+            <img src="/images/speech-bubble 1.png" alt="Experienced Professionals" className="relative w-8 h-8 flex-shrink-0 mt-0.5" />
+            <div className="relative">
+              <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">Experienced Professionals</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">Find doctors with years of expertise in treating various skin conditions.</p>
+            </div>
+          </div>
+
+          {/* Card 5 – Secure Online Payments */}
+          <div
+            className="relative flex items-start gap-4 bg-white border border-gray-200 rounded-2xl p-5 overflow-hidden"
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-9 rounded-l-2xl" style={{ backgroundColor: "#EBF3FD" }} />
+            <img src="/images/mortarboard.png" alt="Secure Online Payments" className="relative w-8 h-8 flex-shrink-0 mt-0.5" />
+            <div className="relative">
+              <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">Secure Online Payments</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">Pay safely using trusted payment methods with instant confirmation.</p>
+            </div>
+          </div>
+
+          {/* Card 6 – Instant Appointment Confirmation */}
+          <div
+            className="relative flex items-start gap-4 bg-white border border-gray-200 rounded-2xl p-5 overflow-hidden"
+            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-9 rounded-l-2xl" style={{ backgroundColor: "#EBF3FD" }} />
+            <img src="/images/check.png" alt="Instant Appointment Confirmation" className="relative w-8 h-8 flex-shrink-0 mt-0.5" />
+            <div className="relative">
+              <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">Instant Appointment Confirmation</h3>
+              <p className="text-gray-500 text-sm leading-relaxed">Receive booking confirmation and reminders instantly.</p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

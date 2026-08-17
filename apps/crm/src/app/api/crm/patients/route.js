@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import _db from '@repo/lib/db';
 import PatientModel from '../../../../../../../packages/lib/src/models/Vendor/Patient.model.js';
+import DoctorConsultation from '../../../../../../../packages/lib/src/models/Vendor/DoctorConsultation.model.js';
 import { authMiddlewareCrm } from '@/middlewareCrm.js';
 import { uploadBase64, deleteFile } from '@repo/lib/utils/upload';
 
@@ -14,7 +15,48 @@ export const GET = authMiddlewareCrm(async (req) => {
     
     const patients = await PatientModel.find({ doctorId }).sort({ createdAt: -1 });
     
-    return NextResponse.json(patients);
+    // Fetch all active/completed consultations for the doctor to calculate visits
+    const consultations = await DoctorConsultation.find({
+      doctorId,
+      status: { $ne: 'cancelled' }
+    }).sort({ appointmentDate: 1 });
+
+    const patientsWithVisits = patients.map(p => {
+      const pObj = p.toObject();
+      const patientConsults = consultations.filter(c => 
+        (c.patientId && c.patientId.toString() === p._id.toString()) || 
+        (c.phoneNumber && c.phoneNumber === p.phone) ||
+        (c.email && c.email.toLowerCase() === p.email.toLowerCase())
+      );
+      
+      const now = new Date();
+      const pastConsults = patientConsults.filter(c => new Date(c.appointmentDate) < now || c.status === 'completed');
+      const futureConsults = patientConsults.filter(c => new Date(c.appointmentDate) >= now && ['scheduled', 'confirmed', 'rescheduled', 'in-progress'].includes(c.status));
+      
+      const lastVisit = pastConsults.length > 0 ? pastConsults[pastConsults.length - 1].appointmentDate : p.lastConsultation || null;
+      const nextVisit = futureConsults.length > 0 ? futureConsults[0].appointmentDate : null;
+      const totalVisits = pastConsults.length > 0 ? pastConsults.length : p.totalConsultations || 0;
+
+      // Derive visitType from the patient's most recent consultation
+      const lastConsultObj = pastConsults.length > 0 ? pastConsults[pastConsults.length - 1] : null;
+      const hasClinic = patientConsults.some(c => c.consultationType === 'physical');
+      const hasVideo = patientConsults.some(c => c.consultationType === 'video');
+      let visitType = 'appointment'; // default
+      if (hasClinic && hasVideo) visitType = 'appointment';
+      else if (hasClinic) visitType = 'physical';
+      else if (hasVideo) visitType = 'video';
+      else if (futureConsults.length > 0) visitType = 'appointment';
+
+      return {
+        ...pObj,
+        lastVisit,
+        nextVisit,
+        totalVisits,
+        visitType
+      };
+    });
+    
+    return NextResponse.json(patientsWithVisits);
   } catch (error) {
     return NextResponse.json({ success: false, message: 'Failed to fetch patients', error: error.message }, { status: 500 });
   }

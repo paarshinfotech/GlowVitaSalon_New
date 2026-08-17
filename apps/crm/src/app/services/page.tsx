@@ -90,7 +90,8 @@ import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import { Service } from './components/types';
 
 export default function ServicesPage() {
-  const { user } = useCrmAuth();
+  const { user, role } = useCrmAuth();
+  const isDoctor = role === 'doctor';
   const dispatch = useDispatch();
   const serviceState = useAppSelector((state: any) => state.service || {
     searchTerm: '',
@@ -279,7 +280,7 @@ export default function ServicesPage() {
                 Services
               </h1>
               <p className="text-muted-foreground text-lg leading-relaxed max-w-2xl">
-                Manage the services your salon offers
+                {isDoctor ? "Manage the consultation services and fees your clinic offers" : "Manage the services your salon offers"}
               </p>
             </div>
           </div>
@@ -301,10 +302,10 @@ export default function ServicesPage() {
             { header: 'Service', key: 'name' },
             { header: 'Category', key: 'categoryName' },
             { header: 'Duration', key: 'duration', transform: (val) => `${val} mins` },
-            { header: 'Price', key: 'price', transform: (val) => `₹${val?.toFixed(2)}` },
-            { header: 'Discount Price', key: 'discountedPrice', transform: (val) => `₹${val?.toFixed(2) || '0.00'}` },
+            { header: isDoctor ? 'Fee' : 'Price', key: 'price', transform: (val) => `₹${val?.toFixed(2)}` },
+            ...(!isDoctor ? [{ header: 'Discount Price', key: 'discountedPrice', transform: (val: any) => `₹${val?.toFixed(2) || '0.00'}` }] : []),
             { header: 'Status', key: 'status' },
-            { header: 'Online Booking', key: 'onlineBooking', transform: (val) => val ? 'Yes' : 'No' }
+            ...(!isDoctor ? [{ header: 'Online Booking', key: 'onlineBooking', transform: (val: any) => val ? 'Yes' : 'No' }] : [])
           ]}
         />
 

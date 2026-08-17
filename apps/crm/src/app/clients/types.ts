@@ -31,6 +31,7 @@ export type Client = {
     address: string;
     preferences?: string;
     lastVisit: string;
+    nextVisit?: string;
     totalBookings: number;
     totalSpent: number;
     status: 'Active' | 'Inactive' | 'New';

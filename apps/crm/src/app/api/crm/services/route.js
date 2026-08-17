@@ -64,7 +64,7 @@ export const POST = authMiddlewareCrm(async (req) => {
     { message: "Services submitted for approval successfully", vendorServices },
     { status: 201 }
   );
-}, ["vendor"]);
+}, ["vendor", "doctor"]);
 
 // GET: Retrieve VendorServices by vendor ID or paginated services
 export const GET = authMiddlewareCrm(async (req) => {
@@ -126,7 +126,7 @@ export const GET = authMiddlewareCrm(async (req) => {
   };
 
   return Response.json(response);
-}, ["vendor"]);
+}, ["vendor", "doctor"]);
 
 
 // PUT: Update specific services in the VendorServices document
@@ -219,7 +219,7 @@ export const PUT = authMiddlewareCrm(async (req) => {
     { message: "Services updated successfully", vendorServices: updatedServices.find((update) => update) },
     { status: 200 }
   );
-}, ["vendor"]);
+}, ["vendor", "doctor"]);
 
 // DELETE: Remove specific services or the entire VendorServices document
 export const DELETE = authMiddlewareCrm(async (req) => {
@@ -277,4 +277,4 @@ export const DELETE = authMiddlewareCrm(async (req) => {
     { message: "Service deleted successfully", vendorServices: result },
     { status: 200 }
   );
-}, ["vendor"]);
+}, ["vendor", "doctor"]);

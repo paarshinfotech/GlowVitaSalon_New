@@ -13,7 +13,7 @@ export const GET = authMiddlewareCrm(async (req) => {
     const addOns = await AddOnModel.find({ vendor: vendorId }).sort({ createdAt: -1 });
 
     return Response.json({ addOns });
-}, ["vendor"]);
+}, ["vendor", "doctor"]);
 
 // POST: Create a new add-on
 export const POST = authMiddlewareCrm(async (req) => {
@@ -47,7 +47,7 @@ export const POST = authMiddlewareCrm(async (req) => {
         console.error("POST /api/crm/add-ons - Error creating add-on:", error);
         return Response.json({ message: "Failed to create add-on", error: error.message }, { status: 500 });
     }
-}, ["vendor"]);
+}, ["vendor", "doctor"]);
 
 // PUT: Update an add-on
 export const PUT = authMiddlewareCrm(async (req) => {
@@ -90,7 +90,7 @@ export const PUT = authMiddlewareCrm(async (req) => {
         console.error("PUT /api/crm/add-ons - Error updating add-on:", error);
         return Response.json({ message: "Failed to update add-on", error: error.message }, { status: 500 });
     }
-}, ["vendor"]);
+}, ["vendor", "doctor"]);
 
 // DELETE: Delete an add-on
 export const DELETE = authMiddlewareCrm(async (req) => {
@@ -109,4 +109,4 @@ export const DELETE = authMiddlewareCrm(async (req) => {
     }
 
     return Response.json({ message: "Add-on deleted successfully" });
-}, ["vendor"]);
+}, ["vendor", "doctor"]);

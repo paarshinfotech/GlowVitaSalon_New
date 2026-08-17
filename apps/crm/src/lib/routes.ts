@@ -46,6 +46,7 @@ export const doctorNavItems: NavItem[] = [
   { title: "Calendar", href: "/calendar", Icon: FaCalendarAlt, permission: 'calendar_view' },
   { title: "Appointments", href: "/appointments", Icon: FaClipboardList, permission: 'appointments_view' },
   { title: "Patients", href: "/patients", Icon: FaUserCircle, permission: 'patients_view' },
+  { title: "Services", href: "/services", Icon: FaCut, permission: 'services_view' },
   { title: "Consultations", href: "/consultations", Icon: FaStethoscope, permission: 'consultations_view' },
   { title: "Timetable", href: "/timetable", Icon: FaClock, permission: 'timetable_view' },
   { title: "Staff", href: "/doctor-staff", Icon: FaUsers, permission: 'doctor_staff_view' },

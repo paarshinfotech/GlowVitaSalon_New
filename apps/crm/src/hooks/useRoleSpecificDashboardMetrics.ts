@@ -55,9 +55,9 @@ interface DoctorDashboardMetrics {
   averageConsultationTime: number;
   patientSatisfaction: number;
   topServices: Array<{
-    name: string;
+    serviceName: string;
     count: number;
-    revenue: number;
+    totalRevenue: number;
   }>;
   recentAppointments: Array<{
     id: string;
@@ -67,6 +67,13 @@ interface DoctorDashboardMetrics {
     time: string;
     status: string;
   }>;
+  totalClinicVisit: number;
+  totalVideoCallConsultation: number;
+  bookingHours: number;
+  totalExpenses: number;
+  totalBusiness: number;
+  profit: number;
+  loss: number;
 }
 
 interface UseRoleSpecificDashboardMetricsReturn {

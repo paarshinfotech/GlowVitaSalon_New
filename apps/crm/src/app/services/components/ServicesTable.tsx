@@ -6,6 +6,8 @@ import { Eye, Edit, Trash2, Plus, Tag, Clock } from "lucide-react";
 import Image from "next/image";
 import { Service } from "./types";
 
+import { useCrmAuth } from "@/hooks/useCrmAuth";
+
 interface ServicesTableProps {
   services: Service[];
   onEdit: (service: Service) => void;
@@ -33,6 +35,9 @@ const ServicesTable = ({
   isError,
   refetch
 }: ServicesTableProps) => {
+  const { role } = useCrmAuth();
+  const isDoctor = role === 'doctor';
+
   const filteredServices = services.filter(
     (service: Service) =>
       (service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -50,10 +55,10 @@ const ServicesTable = ({
               <TableHead>Service</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Duration</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Discount Price</TableHead>
+              <TableHead>{isDoctor ? "Fee" : "Price"}</TableHead>
+              {!isDoctor && <TableHead>Discount Price</TableHead>}
               <TableHead>Status</TableHead>
-              <TableHead>Active</TableHead>
+              {!isDoctor && <TableHead>Active</TableHead>}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -61,7 +66,7 @@ const ServicesTable = ({
             {isError && !isNoServicesError ? (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={isDoctor ? 6 : 8}
                   className="text-center py-10 text-muted-foreground"
                 >
                   Failed to load services. Please try again later.
@@ -101,7 +106,7 @@ const ServicesTable = ({
                     </div>
                   </TableCell>
                   <TableCell>₹{service.price?.toFixed(2)}</TableCell>
-                  <TableCell>₹{service.discountedPrice?.toFixed(2) || '0.00'}</TableCell>
+                  {!isDoctor && <TableCell>₹{service.discountedPrice?.toFixed(2) || '0.00'}</TableCell>}
                   <TableCell>
                     <div className="flex flex-col items-start gap-1">
                       <Badge
@@ -124,12 +129,14 @@ const ServicesTable = ({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={service.onlineBooking}
-                      onCheckedChange={() => onVisibilityToggle(service)}
-                    />
-                  </TableCell>
+                  {!isDoctor && (
+                    <TableCell>
+                      <Switch
+                        checked={service.onlineBooking}
+                        onCheckedChange={() => onVisibilityToggle(service)}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       {service.status === 'disapproved' && (
@@ -173,19 +180,21 @@ const ServicesTable = ({
                           Edit
                         </span>
                       </div>
-                      <div className="relative group/tip">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onAddOn(service)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                        <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 whitespace-nowrap rounded bg-foreground px-2 py-0.5 text-[10px] font-medium text-background opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-                          Add Addon
-                        </span>
-                      </div>
+                      {!isDoctor && (
+                        <div className="relative group/tip">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onAddOn(service)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                          <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 whitespace-nowrap rounded bg-foreground px-2 py-0.5 text-[10px] font-medium text-background opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+                            Add Addon
+                          </span>
+                        </div>
+                      )}
                       <div className="relative group/tip">
                         <Button
                           variant="ghost"
@@ -206,7 +215,7 @@ const ServicesTable = ({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={isDoctor ? 6 : 8}
                   className="text-center py-10 text-muted-foreground"
                 >
                   {isNoServicesError ? "No services found. Add your first service to get started!" : "No matching services found."}

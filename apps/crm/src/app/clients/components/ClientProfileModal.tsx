@@ -5,23 +5,52 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from "@repo/ui/button";
 import { Badge } from "@repo/ui/badge";
 import { Label } from '@repo/ui/label';
-import { Calendar, User, Package, Star, CreditCard, PieChart, Scissors, FileText, CheckCircle, ShoppingBag, Clock } from 'lucide-react';
+import { Calendar, User, Package, Star, CreditCard, PieChart, Scissors, FileText, CheckCircle, ShoppingBag, Clock, ChevronDown } from 'lucide-react';
 import { Client, Review } from '../types';
+
+const getVisitTypeBadge = (appt: any) => {
+  const vType = (appt?.visitType || appt?.type || appt?.consultationType || '').toLowerCase();
+  if (vType === 'physical' || vType.includes('clinic')) {
+    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">Clinic Visit</span>;
+  }
+  if (vType === 'video' || vType.includes('video')) {
+    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-700">Video Call</span>;
+  }
+  return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Appointment</span>;
+};
 
 const AppointmentsSection = ({
   appointments,
   activeTab,
   setActiveTab,
+  isPatientMode = false,
 }: {
   appointments: any[];
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  isPatientMode?: boolean;
 }) => {
+  const [filterType, setFilterType] = useState<string>('all');
   const clientAppts = appointments || [];
+
+  const filteredAppts = clientAppts.filter((appt: any) => {
+    if (!isPatientMode || filterType === 'all') return true;
+    const vType = (appt?.visitType || appt?.type || appt?.consultationType || '').toLowerCase();
+    if (filterType === 'physical') {
+      return vType === 'physical' || vType.includes('clinic');
+    }
+    if (filterType === 'video') {
+      return vType === 'video' || vType.includes('video');
+    }
+    if (filterType === 'appointment') {
+      return vType === 'appointment' || (!vType);
+    }
+    return true;
+  });
 
   const now = new Date();
 
-  const upcoming = clientAppts
+  const upcoming = filteredAppts
     .filter((appt: any) => {
       const d = new Date(appt?.date || appt?.appointmentDate || 0);
       if (appt.startTime) {
@@ -32,7 +61,7 @@ const AppointmentsSection = ({
     })
     .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const past = clientAppts
+  const past = filteredAppts
     .filter((appt: any) => {
       const d = new Date(appt?.date || appt?.appointmentDate || 0);
       if (appt.startTime) {
@@ -45,9 +74,28 @@ const AppointmentsSection = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Calendar className="w-5 h-5 text-primary flex-shrink-0" />
-        <h3 className="text-lg font-semibold text-gray-900 truncate">Appointments</h3>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-primary flex-shrink-0" />
+          <h3 className="text-lg font-semibold text-gray-900 truncate">Appointments</h3>
+        </div>
+
+        {/* Filter Dropdown ONLY for Patients */}
+        {isPatientMode && (
+          <div className="relative">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="appearance-none pl-3 pr-8 py-1.5 rounded-lg border border-border bg-background text-xs font-medium text-foreground cursor-pointer hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            >
+              <option value="all">All Types</option>
+              <option value="physical">Visit Clinic</option>
+              <option value="video">Video Call</option>
+              <option value="appointment">Appointment</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+        )}
       </div>
 
       <div className="bg-card rounded-lg border">
@@ -82,10 +130,13 @@ const AppointmentsSection = ({
                   {upcoming.map((appt: any, i: number) => (
                     <div key={i} className="p-4 bg-background rounded-lg border">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">
-                            {appt?.serviceName || appt?.service?.name || 'Service'}
-                          </p>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium text-foreground truncate">
+                              {appt?.serviceName || appt?.service?.name || 'Service'}
+                            </p>
+                            {isPatientMode && getVisitTypeBadge(appt)}
+                          </div>
                           <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mt-1">
                             <span>{new Date(appt.date).toLocaleDateString()}</span>
                             <span>•</span>
@@ -120,10 +171,13 @@ const AppointmentsSection = ({
                   {past.map((appt: any, i: number) => (
                     <div key={i} className="p-4 bg-background rounded-lg border">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">
-                            {appt?.serviceName || appt?.service?.name || 'Service'}
-                          </p>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium text-foreground truncate">
+                              {appt?.serviceName || appt?.service?.name || 'Service'}
+                            </p>
+                            {isPatientMode && getVisitTypeBadge(appt)}
+                          </div>
                           <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mt-1">
                             <span>{new Date(appt.date).toLocaleDateString()}</span>
                             <span>•</span>
@@ -163,6 +217,13 @@ const AppointmentsSection = ({
   );
 };
 
+const formatDateStr = (dateStr?: string) => {
+  if (!dateStr || dateStr === 'N/A') return 'N/A';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
 interface ClientProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -180,6 +241,7 @@ interface ClientProfileModalProps {
   profileClientBillings: any[];
   allReviews: Review[];
   role?: string;
+  isPatient?: boolean;
   handleAddAppointment: (client: Client) => void;
 }
 
@@ -198,10 +260,17 @@ export default function ClientProfileModal({
   profileClientBillings,
   allReviews,
   role,
+  isPatient,
   handleAddAppointment,
 }: ClientProfileModalProps) {
   const [appointmentTab, setAppointmentTab] = useState('upcoming');
   const [paymentTab, setPaymentTab] = useState<'appointments' | 'orders'>('appointments');
+  const [paymentCategoryFilter, setPaymentCategoryFilter] = useState<string>('all');
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState<string>('all');
+
+  const isPatientMode = isPatient || role === 'doctor';
+  const entityNameTitle = isPatientMode ? 'Patient' : 'Client';
+  const entityNameSingular = isPatientMode ? 'patient' : 'client';
 
   // Hide scrollbar styles
   useEffect(() => {
@@ -290,9 +359,9 @@ export default function ClientProfileModal({
                 <div className="flex md:flex-col space-x-1 md:space-x-0 md:space-y-1 min-w-max md:min-w-0">
                   {[
                     { id: 'overview' as const, label: 'Overview', icon: PieChart },
-                    { id: 'client-details' as const, label: 'Client Details', icon: User },
+                    { id: 'client-details' as const, label: `${entityNameTitle} Details`, icon: User },
                     { id: 'appointments' as const, label: 'Appointments', icon: Calendar, hide: role === 'supplier' },
-                    { id: 'orders' as const, label: 'Orders', icon: Package },
+                    { id: 'orders' as const, label: 'Orders', icon: Package, hide: isPatientMode },
                     { id: 'reviews' as const, label: 'Reviews', icon: Star },
                     { id: 'payment-history' as const, label: 'Payment History', icon: CreditCard },
                   ].filter(tab => !tab.hide).map((tab) => {
@@ -328,42 +397,77 @@ export default function ClientProfileModal({
                     <PieChart className="w-5 h-5 text-primary" />
                     <h3 className="text-lg font-semibold text-gray-900">Overview</h3>
                   </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <div className="bg-card p-4 rounded-lg border min-h-[100px]">
-                      <p className="text-sm text-muted-foreground">Total Sale</p>
-                      <p className="text-2xl font-bold text-primary">
-                        ₹{(totalsById.get(String(profileClient._id)) || 0).toFixed(2)}
-                      </p>
+                  {isPatientMode ? (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Total Sale</p>
+                        <p className="text-2xl font-bold text-primary">
+                          ₹{(totalsById.get(String(profileClient._id)) || 0).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Total Visits</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {bookingsById.get(String(profileClient._id)) || profileClient.totalBookings || 0}
+                        </p>
+                      </div>
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Last Visit</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {formatDateStr(profileClient.lastVisit)}
+                        </p>
+                      </div>
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Next Visit</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {formatDateStr(profileClient.nextVisit)}
+                        </p>
+                      </div>
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Missed Appointment</p>
+                        <p className="text-2xl font-bold text-destructive">
+                          {cancelledById.get(String(profileClient._id)) || 0}
+                        </p>
+                      </div>
                     </div>
-                    <div className="bg-card p-4 rounded-lg border min-h-[100px]">
-                      <p className="text-sm text-muted-foreground">Total Visits</p>
-                      <p className="text-2xl font-bold text-primary">
-                        {bookingsById.get(String(profileClient._id)) || 0}
-                      </p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Total Sale</p>
+                        <p className="text-2xl font-bold text-primary">
+                          ₹{(totalsById.get(String(profileClient._id)) || 0).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Total Visits</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {bookingsById.get(String(profileClient._id)) || 0}
+                        </p>
+                      </div>
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Completed</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {completedById.get(String(profileClient._id)) || 0}
+                        </p>
+                      </div>
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Cancelled</p>
+                        <p className="text-2xl font-bold text-destructive">
+                          {cancelledById.get(String(profileClient._id)) || 0}
+                        </p>
+                      </div>
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Total Reviews</p>
+                        <p className="text-2xl font-bold text-primary">{clientReviews.length}</p>
+                      </div>
+                      <div className="bg-card p-4 rounded-lg border min-h-[100px]">
+                        <p className="text-sm text-muted-foreground">Completed Orders</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {(profileClientOrders || []).filter((o: any) => o.status === 'Delivered').length}
+                        </p>
+                      </div>
                     </div>
-                    <div className="bg-card p-4 rounded-lg border min-h-[100px]">
-                      <p className="text-sm text-muted-foreground">Completed</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {completedById.get(String(profileClient._id)) || 0}
-                      </p>
-                    </div>
-                    <div className="bg-card p-4 rounded-lg border min-h-[100px]">
-                      <p className="text-sm text-muted-foreground">Cancelled</p>
-                      <p className="text-2xl font-bold text-destructive">
-                        {cancelledById.get(String(profileClient._id)) || 0}
-                      </p>
-                    </div>
-                    <div className="bg-card p-4 rounded-lg border min-h-[100px]">
-                      <p className="text-sm text-muted-foreground">Total Reviews</p>
-                      <p className="text-2xl font-bold text-primary">{clientReviews.length}</p>
-                    </div>
-                    <div className="bg-card p-4 rounded-lg border min-h-[100px]">
-                      <p className="text-sm text-muted-foreground">Completed Orders</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {(profileClientOrders || []).filter((o: any) => o.status === 'Delivered').length}
-                      </p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -371,7 +475,7 @@ export default function ClientProfileModal({
                 <div className="space-y-6">
                   <div className="flex items-center gap-2">
                     <User className="w-5 h-5 text-primary flex-shrink-0" />
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">Client Details</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 truncate">{entityNameTitle} Details</h3>
                   </div>
 
                   <div className="bg-card p-4 rounded-lg border">
@@ -438,6 +542,7 @@ export default function ClientProfileModal({
                   appointments={profileClientAppointments}
                   activeTab={appointmentTab}
                   setActiveTab={setAppointmentTab}
+                  isPatientMode={isPatientMode}
                 />
               )}
 
@@ -540,7 +645,7 @@ export default function ClientProfileModal({
                       </div>
                       <p className="text-muted-foreground font-medium">No sales or orders yet</p>
                       <p className="text-sm text-muted-foreground/70 mt-1">
-                        Records will appear here once the client makes a purchase.
+                        Records will appear here once the {entityNameSingular} makes a purchase.
                       </p>
                     </div>
                   )}
@@ -561,7 +666,7 @@ export default function ClientProfileModal({
                       </div>
                       <p className="text-muted-foreground font-medium">No reviews found</p>
                       <p className="text-sm text-muted-foreground/70 mt-1">
-                        This client hasn't left any reviews for your services or products yet.
+                        This {entityNameSingular} hasn't left any reviews for your services or products yet.
                       </p>
                     </div>
                   ) : (
@@ -666,52 +771,123 @@ export default function ClientProfileModal({
                   </div>
 
                   <div className="bg-card rounded-lg border">
-                    <div className="p-3 border-b flex items-center justify-between">
+                    <div className="p-3 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-primary flex-shrink-0" />
                         <h4 className="font-medium text-foreground truncate">Transaction History</h4>
                       </div>
+
+                      {/* 2 Filter Dropdowns ONLY for Patients */}
+                      {isPatientMode && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* 1st Dropdown: Services / Category Filter */}
+                          <div className="relative">
+                            <select
+                              value={paymentCategoryFilter}
+                              onChange={(e) => setPaymentCategoryFilter(e.target.value)}
+                              className="appearance-none pl-3 pr-8 py-1.5 rounded-lg border border-border bg-background text-xs font-medium text-foreground cursor-pointer hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            >
+                              <option value="all">All Services</option>
+                              <option value="services">Services</option>
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          </div>
+
+                          {/* 2nd Dropdown: Visit / Consultation Type Filter */}
+                          <div className="relative">
+                            <select
+                              value={paymentTypeFilter}
+                              onChange={(e) => setPaymentTypeFilter(e.target.value)}
+                              className="appearance-none pl-3 pr-8 py-1.5 rounded-lg border border-border bg-background text-xs font-medium text-foreground cursor-pointer hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            >
+                              <option value="all">All Types</option>
+                              <option value="physical">Visit Clinic</option>
+                              <option value="video">Video Call</option>
+                              <option value="appointment">Appointment</option>
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="border-b">
-                      <nav className="flex" aria-label="Tabs">
-                        <button
-                          onClick={() => setPaymentTab('appointments')}
-                          className={`flex-1 py-3 text-sm font-medium px-2 min-w-0 ${paymentTab === 'appointments'
-                              ? 'text-primary border-b-2 border-primary'
-                              : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                        >
-                          <span className="truncate">Appointments</span>
-                        </button>
-                        <button
-                          onClick={() => setPaymentTab('orders')}
-                          className={`flex-1 py-3 text-sm font-medium px-2 min-w-0 ${paymentTab === 'orders'
-                              ? 'text-primary border-b-2 border-primary'
-                              : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                        >
-                          <span className="truncate">Orders</span>
-                        </button>
-                      </nav>
-                    </div>
+                    {/* Sub-tabs for Clients (Non-Patient Mode) */}
+                    {!isPatientMode && (
+                      <div className="border-b">
+                        <nav className="flex" aria-label="Tabs">
+                          <button
+                            onClick={() => setPaymentTab('appointments')}
+                            className={`flex-1 py-3 text-sm font-medium px-2 min-w-0 ${paymentTab === 'appointments'
+                                ? 'text-primary border-b-2 border-primary'
+                                : 'text-muted-foreground hover:text-foreground'
+                              }`}
+                          >
+                            <span className="truncate">Appointments</span>
+                          </button>
+                          <button
+                            onClick={() => setPaymentTab('orders')}
+                            className={`flex-1 py-3 text-sm font-medium px-2 min-w-0 ${paymentTab === 'orders'
+                                ? 'text-primary border-b-2 border-primary'
+                                : 'text-muted-foreground hover:text-foreground'
+                              }`}
+                          >
+                            <span className="truncate">Orders</span>
+                          </button>
+                        </nav>
+                      </div>
+                    )}
 
                     <div className="p-3 space-y-3">
                       {(() => {
                         let items: any[] = [];
 
-                        if (paymentTab === 'appointments') {
-                          items = profileClientAppointments
+                        if (isPatientMode) {
+                          const apptItems = profileClientAppointments
                             .filter((appt: any) => String(appt?.status || '').toLowerCase() === 'completed')
                             .map(i => ({ ...i, _type: 'appointment' }));
-                        } else {
+
                           const billItems = profileClientBillings
                             .filter((bill: any) => String(bill?.paymentStatus || '').toLowerCase() === 'completed')
                             .map(i => ({ ...i, _type: 'billing' }));
-                          const orderItems = profileClientOrders
-                            .filter((order: any) => String(order?.paymentStatus || '').toLowerCase() === 'completed' || String(order?.status || '').toLowerCase() === 'delivered')
-                            .map(i => ({ ...i, _type: 'order' }));
-                          items = [...billItems, ...orderItems];
+
+                          items = [...apptItems, ...billItems];
+
+                          // 1st Filter: Category
+                          if (paymentCategoryFilter === 'services') {
+                            items = items.filter(i => i._type === 'appointment' || i._type === 'billing');
+                          }
+
+                          // 2nd Filter: Visit / Consultation Type
+                          if (paymentTypeFilter !== 'all') {
+                            items = items.filter(item => {
+                              const vType = (item?.visitType || item?.type || item?.consultationType || '').toLowerCase();
+                              if (paymentTypeFilter === 'physical') {
+                                return vType === 'physical' || vType.includes('clinic');
+                              }
+                              if (paymentTypeFilter === 'video') {
+                                return vType === 'video' || vType.includes('video');
+                              }
+                              if (paymentTypeFilter === 'appointment') {
+                                return vType === 'appointment' || (!vType && item._type === 'appointment');
+                              }
+                              return true;
+                            });
+                          }
+                        } else {
+                          // Standard Client logic
+                          if (paymentTab === 'appointments') {
+                            items = profileClientAppointments
+                              .filter((appt: any) => String(appt?.status || '').toLowerCase() === 'completed')
+                              .map(i => ({ ...i, _type: 'appointment' }));
+                          } else {
+                            const billItems = profileClientBillings
+                              .filter((bill: any) => String(bill?.paymentStatus || '').toLowerCase() === 'completed')
+                              .map(i => ({ ...i, _type: 'billing' }));
+                            const orderItems = profileClientOrders
+                              .filter((order: any) => String(order?.paymentStatus || '').toLowerCase() === 'completed' || String(order?.status || '').toLowerCase() === 'delivered')
+                              .map(i => ({ ...i, _type: 'order' }));
+                            items = [...billItems, ...orderItems];
+                          }
                         }
 
                         items.sort((a: any, b: any) => {
@@ -772,9 +948,12 @@ export default function ClientProfileModal({
                             <div key={item?._id || item?.id || idx} className="p-4 bg-background rounded-lg border">
                               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-foreground truncate">
-                                    {title} {(item.invoiceNumber || (item._type === 'order' && item._id)) && `(#${String(item.invoiceNumber || item._id).slice(-6).toUpperCase()})`}
-                                  </p>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="font-medium text-foreground truncate">
+                                      {title} {(item.invoiceNumber || (item._type === 'order' && item._id)) && `(#${String(item.invoiceNumber || item._id).slice(-6).toUpperCase()})`}
+                                    </p>
+                                    {isPatientMode && getVisitTypeBadge(item)}
+                                  </div>
                                   {orderDetails && (
                                     <p className="text-sm text-foreground/80 mt-1 line-clamp-2">
                                       {orderDetails}

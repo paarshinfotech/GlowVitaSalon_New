@@ -4,13 +4,6 @@ import { Suspense, useState } from "react";
 import { MarketingHeader } from '@/components/MarketingHeader';
 import { Footer } from '@/components/Footer';
 
-// Custom menu items for doctors pages
-const doctorsMenuItems = [
-  { label: "Consult", href: "/doctors/consult" },
-  { label: "Find Doctor", href: "/doctors/find-doctor" },
-  { label: "Video Consultation", href: "/doctors/video-consultation" },
-];
-
 function DoctorsLayoutContent({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -24,7 +17,6 @@ function DoctorsLayoutContent({ children }: { children: React.ReactNode }) {
         isMobileMenuOpen={isMobileMenuOpen} 
         toggleMobileMenu={toggleMobileMenu}
         isHomePage={false}
-        customMenuItems={doctorsMenuItems}
       />
       <main className="flex-grow">
         {children}
