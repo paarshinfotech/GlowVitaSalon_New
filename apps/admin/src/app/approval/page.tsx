@@ -186,12 +186,15 @@ type Doctor = {
   documents?: {
     aadharCard?: string;
     panCard?: string;
-    udhayamCert?: string;
-    shopAct?: string;
+    medicalRegCert?: string;
+    medicalDegreeCert?: string;
+    clinicDetails?: string;
+    otherDocs?: string[];
     aadharCardStatus?: string;
     panCardStatus?: string;
-    udhayamCertStatus?: string;
-    shopActStatus?: string;
+    medicalRegCertStatus?: string;
+    medicalDegreeCertStatus?: string;
+    clinicDetailsStatus?: string;
   };
   createdAt?: string;
   updatedAt?: string;
@@ -336,7 +339,28 @@ export default function VendorApprovalPage() {
     return false;
   });
 
-  const getUnapprovedDocuments = (entity: Vendor | Supplier | Doctor) => {
+  const getUnapprovedDocuments = (entity: Vendor | Supplier | Doctor, entityType: 'doctor' | 'vendor' | 'supplier') => {
+    const documents = entity.documents || {};
+
+    if (entityType === 'doctor') {
+      const doctorMandatoryDocs = [
+        { key: 'aadharCard', label: 'Aadhar Card' },
+        { key: 'panCard', label: 'PAN Card' },
+        { key: 'medicalRegCert', label: 'Medical Registration Certificate' },
+        { key: 'medicalDegreeCert', label: 'Medical Degree Certificate' },
+        { key: 'clinicDetails', label: 'Clinic Details' },
+      ];
+      return doctorMandatoryDocs
+        .filter((doc) => {
+          const isUploaded = !!((documents as any)[doc.key] && (documents as any)[doc.key] !== '');
+          const status = (documents as any)[`${doc.key}Status`];
+          // All 5 mandatory doctor docs must be uploaded AND approved
+          return !isUploaded || status !== 'approved';
+        })
+        .map((doc) => doc.label);
+    }
+
+    // Vendor / Supplier logic (unchanged)
     const mandatoryDocs = [
       { key: "aadharCard", label: "Aadhar Card" },
       { key: "panCard", label: "PAN Card" },
@@ -344,7 +368,6 @@ export default function VendorApprovalPage() {
       { key: "shopAct", label: "Shop Act" },
     ];
 
-    const documents = entity.documents || {};
     return mandatoryDocs
       .filter((doc) => {
         const isUploaded = !!((documents as any)[doc.key] && (documents as any)[doc.key] !== "");
@@ -1354,12 +1377,12 @@ export default function VendorApprovalPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleActionClick(doctor, 'doctor', 'approve')}
-                              disabled={getUnapprovedDocuments(doctor).length > 0}
-                              title={getUnapprovedDocuments(doctor).length > 0
-                                ? `Approve documents first: ${getUnapprovedDocuments(doctor).join(', ')}`
+                              disabled={getUnapprovedDocuments(doctor, 'doctor').length > 0}
+                              title={getUnapprovedDocuments(doctor, 'doctor').length > 0
+                                ? `Approve documents first: ${getUnapprovedDocuments(doctor, 'doctor').join(', ')}`
                                 : 'Approve Doctor'}
                             >
-                              <CheckCircle className={cn("h-4 w-4", getUnapprovedDocuments(doctor).length > 0 ? "text-gray-400" : "text-green-600")} />
+                              <CheckCircle className={cn("h-4 w-4", getUnapprovedDocuments(doctor, 'doctor').length > 0 ? "text-gray-400" : "text-green-600")} />
                               <span className="sr-only">Approve</span>
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleActionClick(doctor, 'doctor', 'reject')}>
@@ -1438,12 +1461,12 @@ export default function VendorApprovalPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleActionClick(supplier, 'supplier', 'approve')}
-                              disabled={getUnapprovedDocuments(supplier).length > 0}
-                              title={getUnapprovedDocuments(supplier).length > 0
-                                ? `Approve documents first: ${getUnapprovedDocuments(supplier).join(', ')}`
+                              disabled={getUnapprovedDocuments(supplier, 'supplier').length > 0}
+                              title={getUnapprovedDocuments(supplier, 'supplier').length > 0
+                                ? `Approve documents first: ${getUnapprovedDocuments(supplier, 'supplier').join(', ')}`
                                 : 'Approve Supplier'}
                             >
-                              <CheckCircle className={cn("h-4 w-4", getUnapprovedDocuments(supplier).length > 0 ? "text-gray-400" : "text-green-600")} />
+                              <CheckCircle className={cn("h-4 w-4", getUnapprovedDocuments(supplier, 'supplier').length > 0 ? "text-gray-400" : "text-green-600")} />
                               <span className="sr-only">Approve</span>
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleActionClick(supplier, 'supplier', 'reject')}>

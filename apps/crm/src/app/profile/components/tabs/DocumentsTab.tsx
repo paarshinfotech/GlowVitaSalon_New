@@ -27,12 +27,33 @@ export const DocumentsTab = ({ documents, setVendor }: DocumentsTabProps) => {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
 
+  const getDocumentTypes = () => {
+    if (role === 'doctor') {
+      return [
+        { key: 'aadharCard', label: 'Aadhar Card', required: true },
+        { key: 'panCard', label: 'PAN Card', required: true },
+        { key: 'medicalRegCert', label: 'Medical Registration Certificate', required: true },
+        { key: 'medicalDegreeCert', label: 'Medical Degree Certificate', required: true },
+        { key: 'clinicDetails', label: 'Clinic Details', required: true }
+      ];
+    }
+    return [
+      { key: 'aadharCard', label: 'Aadhar Card', required: true },
+      { key: 'panCard', label: 'PAN Card', required: true },
+      { key: 'udhayamCert', label: 'Udhayam Certificate', required: false },
+      { key: 'shopAct', label: 'Shop Act', required: false }
+    ];
+  };
+
+  const documentTypes = getDocumentTypes();
+
   const handleSave = async () => {
     const missingDocs = documentTypes
       .filter(doc => doc.required && !documents?.[doc.key])
       .map(doc => doc.label);
 
-    if (missingDocs.length > 0) {
+    // Keep strict blocking validation for vendor and supplier roles
+    if (role !== 'doctor' && missingDocs.length > 0) {
       toast.error(`Please upload mandatory documents: ${missingDocs.join(', ')}`);
       return;
     }
@@ -45,7 +66,11 @@ export const DocumentsTab = ({ documents, setVendor }: DocumentsTabProps) => {
       }).unwrap();
 
       if (result.success) {
-        toast.success(result.message);
+        if (role === 'doctor' && missingDocs.length > 0) {
+          toast.warning(`Saved! Please upload the remaining mandatory documents later: ${missingDocs.join(', ')}`);
+        } else {
+          toast.success(result.message);
+        }
       } else {
         toast.error(result.message);
       }
@@ -58,11 +83,11 @@ export const DocumentsTab = ({ documents, setVendor }: DocumentsTabProps) => {
     if (!file) return;
 
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'application/pdf'];
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
 
     // File type validation
     if (!ALLOWED_TYPES.includes(file.type)) {
-      toast.error(`Invalid file type. Only JPG, JPEG, and PDF are allowed for documents.`);
+      toast.error(`Invalid file type. Only JPG, JPEG, PNG, WEBP, and PDF are allowed.`);
       return;
     }
 
@@ -96,6 +121,63 @@ export const DocumentsTab = ({ documents, setVendor }: DocumentsTabProps) => {
       console.error('Error reading document:', error);
       toast.error('Failed to read document file');
     }
+  };
+
+  const handleOtherDocsUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+    const newDocs: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        toast.error(`Invalid file type: ${file.name}. Only JPG, JPEG, PNG, WEBP, and PDF are allowed.`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File too large: ${file.name}. Maximum size allowed is 5MB.`);
+        continue;
+      }
+
+      try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = error => reject(error);
+        });
+        newDocs.push(base64);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        toast.error(`Failed to read file: ${file.name}`);
+      }
+    }
+
+    if (newDocs.length > 0) {
+      setVendor((prev: any) => ({
+        ...prev,
+        documents: {
+          ...prev.documents,
+          otherDocs: [...(prev.documents?.otherDocs || []), ...newDocs]
+        }
+      }));
+    }
+  };
+
+  const handleRemoveOtherDoc = (index: number) => {
+    setVendor((prev: any) => {
+      const otherDocs = [...(prev.documents?.otherDocs || [])];
+      otherDocs.splice(index, 1);
+      return {
+        ...prev,
+        documents: {
+          ...prev.documents,
+          otherDocs
+        }
+      };
+    });
   };
 
   const handleRemoveDocument = (docType: string) => {
@@ -220,6 +302,88 @@ export const DocumentsTab = ({ documents, setVendor }: DocumentsTabProps) => {
               )}
             </div>
           ))}
+          
+          {/* Multiple Other Documents upload for Doctors */}
+          {role === 'doctor' && (
+            <div className="border rounded-lg p-4 mt-6">
+              <input
+                id="doc-upload-otherDocs"
+                type="file"
+                accept="image/*,.pdf"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  handleOtherDocsUpload(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+              <div className="flex items-center justify-between mb-4 border-b pb-3">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Other Documents (Optional)</p>
+                    <p className="text-xs text-muted-foreground">Upload any other supporting certificates or documents.</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="h-10 px-4 rounded-lg" asChild>
+                  <label htmlFor="doc-upload-otherDocs" className="cursor-pointer">
+                    Upload Multiple Files
+                  </label>
+                </Button>
+              </div>
+
+              {documents?.otherDocs && documents.otherDocs.length > 0 ? (
+                <div className="space-y-3">
+                  {documents.otherDocs.map((src: string, index: number) => {
+                    const status = documents?.otherDocsStatus?.[index] || 'pending';
+                    const rejectionReason = documents?.otherDocsAdminRejectionReason?.[index];
+                    return (
+                      <div key={index} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <div>
+                              <span className="text-sm font-medium">Other Document {index + 1}</span>
+                              <p className={`text-xs capitalize mt-0.5 ${status === 'approved' ? 'text-green-600' : status === 'rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                {status}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {getStatusBadge(status)}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg"
+                              onClick={() => openDocumentPreview(src, 'otherDocs')}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg text-destructive hover:text-destructive"
+                              onClick={() => handleRemoveOtherDoc(index)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                        {status === 'rejected' && rejectionReason && (
+                          <div className="mt-2 p-2 bg-red-50 rounded-md border border-red-200">
+                            <p className="text-xs font-medium text-red-800">Rejection Reason:</p>
+                            <p className="text-xs text-red-700">{rejectionReason}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-center text-xs text-muted-foreground py-2 bg-muted/10 rounded-md">No additional documents uploaded</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Document Preview Modal */}

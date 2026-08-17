@@ -53,15 +53,29 @@ const DocumentStatusManager: React.FC<DocumentStatusManagerProps> = ({ entity, r
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
 
-  const documentTypes = [
-    { key: 'aadharCard', label: 'Aadhar Card' },
-    { key: 'panCard', label: 'PAN Card' },
-    { key: 'udhayamCert', label: 'Udhayam Certificate' },
-    { key: 'shopAct', label: 'Shop Act' }
-  ];
+  const documentTypes = role === 'doctor'
+    ? [
+        { key: 'aadharCard', label: 'Aadhar Card' },
+        { key: 'panCard', label: 'PAN Card' },
+        { key: 'medicalRegCert', label: 'Medical Registration Certificate' },
+        { key: 'medicalDegreeCert', label: 'Medical Degree Certificate' },
+        { key: 'clinicDetails', label: 'Clinic Details' }
+      ]
+    : [
+        { key: 'aadharCard', label: 'Aadhar Card' },
+        { key: 'panCard', label: 'PAN Card' },
+        { key: 'udhayamCert', label: 'Udhayam Certificate' },
+        { key: 'shopAct', label: 'Shop Act' }
+      ];
 
   const getDocumentStatus = (docType: string) => {
     if (entity?.documents && typeof entity.documents === 'object') {
+      // Handle otherDoc_N index-based keys
+      const otherDocMatch = docType.match(/^otherDoc_(\d+)$/);
+      if (otherDocMatch) {
+        const idx = parseInt(otherDocMatch[1], 10);
+        return entity.documents.otherDocsStatus?.[idx] || 'pending';
+      }
       const statusKey = `${docType}Status`;
       return entity.documents[statusKey] || 'pending';
     }
@@ -70,6 +84,12 @@ const DocumentStatusManager: React.FC<DocumentStatusManagerProps> = ({ entity, r
 
   const getRejectionReason = (docType: string) => {
     if (entity?.documents && typeof entity.documents === 'object') {
+      // Handle otherDoc_N index-based keys
+      const otherDocMatch = docType.match(/^otherDoc_(\d+)$/);
+      if (otherDocMatch) {
+        const idx = parseInt(otherDocMatch[1], 10);
+        return entity.documents.otherDocsAdminRejectionReason?.[idx] || '';
+      }
       const reasonKey = `${docType}AdminRejectionReason`;
       return entity.documents[reasonKey] || '';
     }
@@ -295,6 +315,87 @@ const DocumentStatusManager: React.FC<DocumentStatusManagerProps> = ({ entity, r
             );
           })}
         </div>
+
+        {/* Other Documents section for Doctors — optional, not required for doctor approval */}
+        {role === 'doctor' && (() => {
+          const otherDocs: string[] = entity?.documents?.otherDocs || [];
+          if (otherDocs.length === 0) return null;
+          return (
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-3">
+                <p className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                  Other Documents ({otherDocs.length})
+                </p>
+                <span className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 rounded-full font-medium">Optional</span>
+              </div>
+              <div className="space-y-3">
+                {otherDocs.map((src: string, index: number) => {
+                  const absoluteSrc = getAbsoluteUrl(src);
+                  const docKey = `otherDoc_${index}`;
+                  const docStatus = getDocumentStatus(docKey);
+                  const rejectionReasonText = getRejectionReason(docKey);
+                  return (
+                    <div
+                      key={index}
+                      className={`border rounded-lg p-3 transition-all ${docStatus === 'pending' ? 'border-yellow-200 bg-yellow-50/20' : 'border-gray-100'}`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 rounded-lg bg-primary/10 text-primary flex-shrink-0">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                          <span className="text-sm font-medium">Document #{index + 1}</span>
+                        </div>
+                        <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+                          {getStatusBadge(docStatus)}
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => openDocumentPreview(absoluteSrc, docKey)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {docStatus === 'pending' && (
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3 text-xs border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+                                onClick={() => handleApproveDocument(docKey)}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="h-8 px-3 text-xs"
+                                onClick={() => handleRejectDocument(docKey)}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {docStatus === 'rejected' && rejectionReasonText && (
+                        <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-100 flex gap-2">
+                          <div className="text-red-500 mt-0.5">
+                            <X className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-red-800">Rejection Reason:</p>
+                            <p className="text-xs text-red-700 mt-1 leading-relaxed">{rejectionReasonText}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
       </CardContent>
 
       {/* Document Preview Modal */}

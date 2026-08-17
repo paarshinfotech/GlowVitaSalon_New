@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { ProfileTab } from './tabs/ProfileTab';
 import { SupplierProfileTab } from './tabs/SupplierProfileTab';
 import { SubscriptionTab } from './tabs/SubscriptionTab';
+import { DoctorWorkingHoursTab } from './tabs/DoctorWorkingHoursTab';
 import { GalleryTab } from './tabs/GalleryTab';
 import { BankDetailsTab } from './tabs/BankDetailsTab';
 import { TravelSettingsTab } from './tabs/TravelSettingsTab';
@@ -19,6 +20,9 @@ import { DocumentsTab } from './tabs/DocumentsTab';
 import { OpeningHoursTab } from './tabs/OpeningHoursTab';
 import { TaxesTab } from './tabs/TaxesTab';
 import { NotificationsTab } from './tabs/NotificationsTab';
+import { DoctorProfileTab } from './tabs/DoctorProfileTab';
+import { AssistantTab } from './tabs/AssistantTab';
+import { ClinicTab } from './tabs/ClinicTab';
 
 import { SmsPackagesTab } from '@/components/SmsPackagesTab';
 import { QRCodeModal } from './modals/QRCodeModal';
@@ -137,6 +141,7 @@ interface DoctorProfile {
   registrationNumber: string;
   doctorType: string;
   specialties: string[];
+  subSpecializations: string[];
   diseases: string[];
   experience: string;
   clinicName: string;
@@ -145,6 +150,7 @@ interface DoctorProfile {
   city: string;
   pincode: string;
   profileImage?: string;
+  gallery?: string[];
   subscription?: Subscription;
   type?: UserType;
   qualification?: string;
@@ -275,6 +281,7 @@ export default function ProfilePage() {
         registrationNumber: doctorData.data.registrationNumber || '',
         doctorType: doctorData.data.doctorType || '',
         specialties: doctorData.data.specialties || [],
+        subSpecializations: doctorData.data.subSpecializations || [],
         diseases: doctorData.data.diseases || [],
         experience: doctorData.data.experience || '',
         clinicName: doctorData.data.clinicName || '',
@@ -283,6 +290,7 @@ export default function ProfilePage() {
         city: doctorData.data.city || '',
         pincode: doctorData.data.pincode || '',
         profileImage: doctorData.data.profileImage || '',
+        gallery: doctorData.data.gallery || [],
         subscription: doctorData.data.subscription || undefined,
         type: 'doctor',
         qualification: doctorData.data.qualification || '',
@@ -563,16 +571,40 @@ export default function ProfilePage() {
                       Subscription
                     </TabsTrigger>
                     <TabsTrigger
-                      value="notifications"
+                      value="gallery"
                       className="whitespace-nowrap rounded-lg px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20"
                     >
-                      Notifications
+                      Gallery
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="clinic"
+                      className="whitespace-nowrap rounded-lg px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20"
+                    >
+                      Clinic Details
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="assistant"
+                      className="whitespace-nowrap rounded-lg px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20"
+                    >
+                      Assistant
                     </TabsTrigger>
                     <TabsTrigger
                       value="documents"
                       className="whitespace-nowrap rounded-lg px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20"
                     >
                       Documents
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="working_hours"
+                      className="whitespace-nowrap rounded-lg px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20"
+                    >
+                      Working Hours
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="notifications"
+                      className="whitespace-nowrap rounded-lg px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all hover:bg-background/60 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/20"
+                    >
+                      Notifications
                     </TabsTrigger>
                   </>
                 )}
@@ -588,9 +620,7 @@ export default function ProfilePage() {
               <SupplierProfileTab supplier={localSupplier} setSupplier={setLocalSupplier} handleProfileImageUpload={handleProfileImageUpload} />
             )}
             {role === 'doctor' && localDoctor && (
-              <div className="p-8 text-center bg-card rounded-xl border border-dashed">
-                <p className="text-muted-foreground">Doctor Profile Tab - Coming Soon</p>
-              </div>
+              <DoctorProfileTab doctor={localDoctor} setDoctor={setLocalDoctor} handleProfileImageUpload={handleProfileImageUpload} />
             )}
           </TabsContent>
 
@@ -662,8 +692,20 @@ export default function ProfilePage() {
               <TabsContent value="subscription">
                 <SubscriptionTab subscription={localDoctor?.subscription} userType="doctor" />
               </TabsContent>
+              <TabsContent value="gallery">
+                <GalleryTab gallery={localDoctor?.gallery || []} setVendor={setLocalDoctor} />
+              </TabsContent>
+              <TabsContent value="clinic">
+                <ClinicTab doctor={localDoctor} setDoctor={setLocalDoctor} />
+              </TabsContent>
+              <TabsContent value="assistant">
+                <AssistantTab doctor={localDoctor} setDoctor={setLocalDoctor} />
+              </TabsContent>
               <TabsContent value="documents">
                 <DocumentsTab documents={localDoctor?.documents} setVendor={setLocalDoctor} />
+              </TabsContent>
+              <TabsContent value="working_hours">
+                <DoctorWorkingHoursTab />
               </TabsContent>
             </>
           )}

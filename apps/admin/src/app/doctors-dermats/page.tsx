@@ -48,6 +48,7 @@ import { Input } from "@repo/ui/input";
 import { Skeleton } from "@repo/ui/skeleton";
 import { Tooltip } from "@repo/ui/tooltip";
 import { DoctorForm, Doctor } from "@/components/DoctorForm";
+import { DoctorEditForm } from "@/components/DoctorEditForm";
 import {
   useGetDoctorsQuery,
   useCreateDoctorMutation,
@@ -66,6 +67,17 @@ export default function DoctorsDermatsPage() {
   const [isNewDoctorModalOpen, setIsNewDoctorModalOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [actionType, setActionType] = useState<ActionType | null>(null);
+
+  const areAllDocsApproved = (doctor: Doctor) => {
+    const docs = doctor.documents || {};
+    return (
+      docs.aadharCardStatus === "approved" &&
+      docs.panCardStatus === "approved" &&
+      docs.medicalRegCertStatus === "approved" &&
+      docs.medicalDegreeCertStatus === "approved" &&
+      docs.clinicDetailsStatus === "approved"
+    );
+  };
 
   // Filter state
   const [filterName, setFilterName] = useState("");
@@ -257,7 +269,7 @@ export default function DoctorsDermatsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {[...Array(9)].map((_, i) => (
+                    {[...Array(8)].map((_, i) => (
                       <TableHead key={i}>
                         <Skeleton className="h-5 w-full" />
                       </TableHead>
@@ -267,7 +279,7 @@ export default function DoctorsDermatsPage() {
                 <TableBody>
                   {[...Array(5)].map((_, i) => (
                     <TableRow key={i}>
-                      {[...Array(9)].map((_, j) => (
+                      {[...Array(8)].map((_, j) => (
                         <TableCell key={j}>
                           <Skeleton className="h-5 w-full" />
                         </TableCell>
@@ -349,221 +361,199 @@ export default function DoctorsDermatsPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="registrations">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="registrations">Doctor Registrations</TabsTrigger>
-          <TabsTrigger value="business">Business Generated</TabsTrigger>
-        </TabsList>
-        <TabsContent value="registrations">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                <div>
-                  <CardTitle>Manage Registrations</CardTitle>
-                  <CardDescription>
-                    Verify and manage doctor profiles.
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => {
-                      setSelectedDoctor(null);
-                      setIsNewDoctorModalOpen(true);
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add New Doctor
-                  </Button>
-                  <Button variant="outline">
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Export List
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6 p-4 rounded-lg bg-secondary">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Filters</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setFilterName("");
-                      setFilterClinic("");
-                      setFilterCategory("");
-                      setFilterAgent("");
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Clear Filters
-                  </Button>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <Input
-                    type="text"
-                    placeholder="Filter by Doctor Name..."
-                    value={filterName}
-                    onChange={(e) => { setFilterName(e.target.value); setCurrentPage(1); }}
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Filter by Clinic Name..."
-                    value={filterClinic}
-                    onChange={(e) => { setFilterClinic(e.target.value); setCurrentPage(1); }}
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Filter by Category..."
-                    value={filterCategory}
-                    onChange={(e) => { setFilterCategory(e.target.value); setCurrentPage(1); }}
-                  />
-                  <Input
-                    type="text"
-                    placeholder="Filter by Agent..."
-                    value={filterAgent}
-                    onChange={(e) => { setFilterAgent(e.target.value); setCurrentPage(1); }}
-                  />
-                </div>
-              </div>
-
-              <div className="overflow-x-auto no-scrollbar">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Sr. No</TableHead>
-                      <TableHead>Doctor's Name</TableHead>
-                      <TableHead>Registration Time</TableHead>
-                      <TableHead>Clinic Name</TableHead>
-                      <TableHead>Registered Via</TableHead>
-                      <TableHead>Subscription</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentItems.map((doctor: Doctor, index: number) => (
-                      <TableRow key={doctor._id}>
-                        <TableCell>{firstItemIndex + index + 1}</TableCell>
-                        <TableCell className="font-medium">
-                          {doctor.name}
-                        </TableCell>
-                        <TableCell>
-                          {doctor.createdAt ? new Date(doctor.createdAt).toLocaleString() : 'N/A'}
-                        </TableCell>
-                        <TableCell>{doctor.clinicName || "N/A"}</TableCell>
-                        <TableCell>Admin</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              doctor.status === "Approved"
-                                ? "default"
-                                : "secondary"
-                            }
-                          >
-                            {doctor.status === "Approved"
-                              ? "Active"
-                              : doctor.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{(doctor.specialties || []).join(', ')}</TableCell>
-                        <TableCell>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-semibold ${doctor.status === "Approved"
-                              ? "bg-green-100 text-green-800"
-                              : doctor.status === "Pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                              }`}
-                          >
-                            {doctor.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Tooltip content="View Details">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleViewClick(doctor)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Tooltip>
-                          <Tooltip content="Edit Doctor">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedDoctor(doctor);
-                                setIsNewDoctorModalOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4 text-blue-500" />
-                            </Button>
-                          </Tooltip>
-                          <Tooltip content="Approve">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleActionClick(doctor, "approve")}
-                            >
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            </Button>
-                          </Tooltip>
-                          <Tooltip content="Reject">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleActionClick(doctor, "reject")}
-                            >
-                              <XCircle className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </Tooltip>
-                          <Tooltip content="Delete Doctor">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleActionClick(doctor, "delete")}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              <Pagination
-                className="mt-4"
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                itemsPerPage={itemsPerPage}
-                onItemsPerPageChange={setItemsPerPage}
-                totalItems={filteredDoctors.length}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="business">
-          <Card>
-            <CardHeader>
-              <CardTitle>Business Generated</CardTitle>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div>
+              <CardTitle>Manage Registrations</CardTitle>
               <CardDescription>
-                Analytics on revenue from doctor consultations.
+                Verify and manage doctor profiles.
               </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>
-                Charts and detailed reports on business generated will be here.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  setSelectedDoctor(null);
+                  setIsNewDoctorModalOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Doctor
+              </Button>
+              <Button variant="outline">
+                <FileDown className="mr-2 h-4 w-4" />
+                Export List
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-6 p-4 rounded-lg bg-secondary">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Filters</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFilterName("");
+                  setFilterClinic("");
+                  setFilterCategory("");
+                  setFilterAgent("");
+                  setCurrentPage(1);
+                }}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear Filters
+              </Button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Input
+                type="text"
+                placeholder="Filter by Doctor Name..."
+                value={filterName}
+                onChange={(e) => { setFilterName(e.target.value); setCurrentPage(1); }}
+              />
+              <Input
+                type="text"
+                placeholder="Filter by Clinic Name..."
+                value={filterClinic}
+                onChange={(e) => { setFilterClinic(e.target.value); setCurrentPage(1); }}
+              />
+              <Input
+                type="text"
+                placeholder="Filter by Category..."
+                value={filterCategory}
+                onChange={(e) => { setFilterCategory(e.target.value); setCurrentPage(1); }}
+              />
+              <Input
+                type="text"
+                placeholder="Filter by Agent..."
+                value={filterAgent}
+                onChange={(e) => { setFilterAgent(e.target.value); setCurrentPage(1); }}
+              />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto no-scrollbar">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sr. No</TableHead>
+                  <TableHead>Doctor's Name</TableHead>
+                  <TableHead>Registration Time</TableHead>
+                  <TableHead>Clinic Name</TableHead>
+                  <TableHead>Subscription</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentItems.map((doctor: Doctor, index: number) => (
+                  <TableRow key={doctor._id}>
+                    <TableCell>{firstItemIndex + index + 1}</TableCell>
+                    <TableCell className="font-medium">
+                      {doctor.name}
+                    </TableCell>
+                    <TableCell>
+                      {doctor.createdAt ? new Date(doctor.createdAt).toLocaleString() : 'N/A'}
+                    </TableCell>
+                    <TableCell>{doctor.clinicName || "N/A"}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          (doctor.subscription?.status === "Active" || doctor.status === "Approved")
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
+                        {doctor.subscription?.status === "Active"
+                          ? "Active"
+                          : doctor.status === "Approved"
+                            ? "Active"
+                            : doctor.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{(doctor.specialties || []).join(', ')}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${doctor.status === "Approved"
+                          ? "bg-green-100 text-green-800"
+                          : doctor.status === "Pending"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                          }`}
+                      >
+                        {doctor.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Tooltip content="View Details">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewClick(doctor)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content="Edit Doctor">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedDoctor(doctor);
+                            setIsNewDoctorModalOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4 text-blue-500" />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content={areAllDocsApproved(doctor) ? "Approve" : "All 5 mandatory documents must be approved first"}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleActionClick(doctor, "approve")}
+                          disabled={!areAllDocsApproved(doctor)}
+                        >
+                          <CheckCircle2 className={`h-4 w-4 ${areAllDocsApproved(doctor) ? 'text-green-600' : 'text-gray-300'}`} />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content="Reject">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleActionClick(doctor, "reject")}
+                        >
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content="Delete Doctor">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleActionClick(doctor, "delete")}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <Pagination
+            className="mt-4"
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
+            totalItems={filteredDoctors.length}
+          />
+        </CardContent>
+      </Card>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
@@ -637,9 +627,11 @@ export default function DoctorsDermatsPage() {
                   Subscription
                 </span>
                 <span className="col-span-2">
-                  {selectedDoctor.status === "Approved"
+                  {selectedDoctor.subscription?.status === "Active"
                     ? "Active"
-                    : selectedDoctor.status}
+                    : selectedDoctor.status === "Approved"
+                      ? "Active"
+                      : selectedDoctor.status}
                 </span>
               </div>
               <div className="grid grid-cols-3 items-center gap-4">
@@ -657,22 +649,32 @@ export default function DoctorsDermatsPage() {
       </Dialog>
 
       {/* Add/Edit Doctor Modal */}
-      <DoctorForm
-        isOpen={isNewDoctorModalOpen}
-        onClose={() => {
-          setIsNewDoctorModalOpen(false);
-          setSelectedDoctor(null);
-        }}
-        doctor={selectedDoctor}
-        isEditMode={!!selectedDoctor}
-        onSubmit={(data) => {
-          if (selectedDoctor) {
-            handleUpdateDoctor(data as Doctor);
-          } else {
+      {selectedDoctor ? (
+        <DoctorEditForm
+          isOpen={isNewDoctorModalOpen}
+          onClose={() => {
+            setIsNewDoctorModalOpen(false);
+            setSelectedDoctor(null);
+          }}
+          doctor={selectedDoctor}
+          onSuccess={() => {
+            // Success handler if needed
+          }}
+        />
+      ) : (
+        <DoctorForm
+          isOpen={isNewDoctorModalOpen}
+          onClose={() => {
+            setIsNewDoctorModalOpen(false);
+            setSelectedDoctor(null);
+          }}
+          doctor={selectedDoctor}
+          isEditMode={false}
+          onSubmit={(data) => {
             handleAddDoctor(data as Omit<Doctor, '_id' | 'createdAt' | 'updatedAt'>);
-          }
-        }}
-      />
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -37,3 +37,7 @@ pnpm-debug.log*
 # OS & Misc
 .DS_Store
 *.pem
+
+
+# Uploaded doctor documents/files
+apps/crm/public/uploads/

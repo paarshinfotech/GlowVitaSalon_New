@@ -115,7 +115,7 @@ const profileNavItems = [
 const navItems = [
   { label: "Products", href: "/all-products" },
   { label: "Salons", href: "/salons" },
-  { label: "Doctor", href: "/doctors" },
+  { label: "Doctors", href: "/doctors" },
   { label: "About Us", href: "/about" },
   { label: "Reach Us", href: "/contact" },
 ];
