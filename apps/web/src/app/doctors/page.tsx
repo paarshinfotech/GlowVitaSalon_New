@@ -359,10 +359,8 @@ export default function DoctorsPage() {
       </div>
 
       {/* Blog Section */}
-      <BlogSectionWithData />
 
       {/* Testimonials Section */}
-      <TestimonialsSectionWithData />
 
       {/* Quick Actions Section */}
       <section className="py-20 bg-background">
@@ -463,8 +461,7 @@ export default function DoctorsPage() {
       </section>
 
       {/* CTA Section */}
-      <CtaSection />
-
+      s
       {/* Why Choose GlowVita Doctors Section */}
       <section className="pt-5 pb-10 container mx-auto px-4 sm:px-6 lg:px-8 bg-background">
         {/* Header – exact same style as WhyChooseUs landing component */}
