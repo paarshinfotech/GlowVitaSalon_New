@@ -358,9 +358,6 @@ export default function DoctorsPage() {
         <SpecialitiesSectionWithData />
       </div>
 
-      {/* Blog Section */}
-
-      {/* Testimonials Section */}
 
       {/* Quick Actions Section */}
       <section className="py-20 bg-background">
