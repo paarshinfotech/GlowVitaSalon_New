@@ -1836,8 +1836,8 @@ export default function VendorApprovalPage() {
                             <FileCheck className="h-4 w-4" /> Document Verification
                           </h4>
                           <Badge variant="outline" className="text-[10px] font-bold uppercase transition-colors">
-                            {getUnapprovedDocuments(doctor).length > 0
-                              ? `${getUnapprovedDocuments(doctor).length} Pending Docs`
+                            {getUnapprovedDocuments(doctor, 'doctor').length > 0
+                              ? `${getUnapprovedDocuments(doctor, 'doctor').length} Pending Docs`
                               : "All Documents Approved"}
                           </Badge>
                         </div>
