@@ -850,12 +850,12 @@ export default function VendorApprovalPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleActionClick(vendor, 'vendor', 'approve')}
-                              disabled={getUnapprovedDocuments(vendor).length > 0}
-                              title={getUnapprovedDocuments(vendor).length > 0
-                                ? `Approve documents first: ${getUnapprovedDocuments(vendor).join(', ')}`
+                              disabled={getUnapprovedDocuments(vendor, 'vendor').length > 0}
+                              title={getUnapprovedDocuments(vendor, 'vendor').length > 0
+                                ? `Approve documents first: ${getUnapprovedDocuments(vendor, 'vendor').join(', ')}`
                                 : 'Approve Vendor'}
                             >
-                              <CheckCircle className={cn("h-4 w-4", getUnapprovedDocuments(vendor).length > 0 ? "text-gray-400" : "text-green-600")} />
+                              <CheckCircle className={cn("h-4 w-4", getUnapprovedDocuments(vendor, 'vendor').length > 0 ? "text-gray-400" : "text-green-600")} />
                               <span className="sr-only">Approve</span>
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => handleActionClick(vendor, 'vendor', 'reject')}>
