@@ -76,7 +76,7 @@ export default function SupplierEditForm({ supplier, isOpen, onClose, refetch, s
   // const [renewPlan, { isLoading: isRenewing }] = useRenewPlanMutation(); // Using manual fetch for now as per previous pattern
   const [selectedRenewalPlan, setSelectedRenewalPlan] = useState<any>(null);
   const [isRenewingManual, setIsRenewingManual] = useState(false);
-  
+
   const token = useSelector((state: any) => state.adminAuth?.token);
 
   useEffect(() => {
@@ -594,10 +594,10 @@ export default function SupplierEditForm({ supplier, isOpen, onClose, refetch, s
                 const amt = selectedRenewalPlan.discountedPrice && selectedRenewalPlan.discountedPrice > 0
                   ? selectedRenewalPlan.discountedPrice
                   : selectedRenewalPlan.price;
-                
-                const isStatusActive = supplier.subscription?.status === 'Active' && 
+
+                const isStatusActive = supplier.subscription?.status === 'Active' &&
                   (!supplier.subscription?.endDate || new Date(supplier.subscription.endDate) > new Date());
-                
+
                 if (amt > 0) {
                   return (
                     <span className="flex items-center gap-2">

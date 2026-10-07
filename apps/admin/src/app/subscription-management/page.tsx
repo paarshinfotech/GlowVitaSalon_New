@@ -588,7 +588,7 @@ export default function SubscriptionManagementPage() {
 
   // Active count derived from live data
   const subscriptionsCount = subscribers.filter((s) => s.status !== 'Pending').length;
-  
+
   const activeSubscribersCount = subscribers.filter((s) => {
     if (s.status === 'Active') return true;
     if (s.history && s.history.length > 0) {
@@ -619,28 +619,28 @@ export default function SubscriptionManagementPage() {
   // Total Revenue = SUM of all PAID subscriptions across history (Active + Scheduled + Expired)
   const totalRevenue = subscribers.reduce((acc, sub) => {
     const plansToCount: any[] = [];
-    
+
     if (sub.planPrice && sub.planPrice > 0) {
-      plansToCount.push({ 
-        price: sub.planPrice, 
-        start: getDateValue(sub.startDate) ? new Date(getDateValue(sub.startDate) as Date).getTime() : null, 
-        end: getDateValue(sub.endDate) ? new Date(getDateValue(sub.endDate) as Date).getTime() : null 
+      plansToCount.push({
+        price: sub.planPrice,
+        start: getDateValue(sub.startDate) ? new Date(getDateValue(sub.startDate) as Date).getTime() : null,
+        end: getDateValue(sub.endDate) ? new Date(getDateValue(sub.endDate) as Date).getTime() : null
       });
     }
-    
+
     if (sub.history && sub.history.length > 0) {
       sub.history.forEach(hItem => {
         const hPlanId = typeof hItem.plan === 'object' ? ((hItem.plan as any).$oid || (hItem.plan as any)._id) : hItem.plan;
         const hPlan = allPlans.find(p => p._id === hPlanId || p.name === (hItem.plan as any)?.name);
         const hPrice = (hPlan?.discountedPrice && hPlan.discountedPrice > 0) ? hPlan.discountedPrice : (hPlan?.price || 0);
-        
+
         if (hPrice > 0) {
           const start = getDateValue(hItem.startDate);
           const end = getDateValue(hItem.endDate);
-          plansToCount.push({ 
-            price: hPrice, 
-            start: start ? new Date(start).getTime() : null, 
-            end: end ? new Date(end).getTime() : null 
+          plansToCount.push({
+            price: hPrice,
+            start: start ? new Date(start).getTime() : null,
+            end: end ? new Date(end).getTime() : null
           });
         }
       });
@@ -924,11 +924,10 @@ export default function SubscriptionManagementPage() {
                           <TableCell>{sub.endDate ? new Date(sub.endDate).toLocaleDateString() : '-'}</TableCell>
                           <TableCell>
                             <span className={`px-2 py-0.5 rounded text-xs font-medium
-                              ${
-                                sub.status === 'Active' ? 'bg-green-100 text-green-800' :
+                              ${sub.status === 'Active' ? 'bg-green-100 text-green-800' :
                                 sub.status === 'Scheduled' ? 'bg-blue-100 text-blue-800' :
-                                sub.status === 'Expired' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-700'
+                                  sub.status === 'Expired' ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-700'
                               }`}>
                               {sub.status}
                             </span>

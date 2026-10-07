@@ -164,7 +164,7 @@ export function Cart({ isOpen, onOpenChange }: CartProps) {
 
   /** Clears cart from DB and Redux after a successful order. */
   const clearCartAfterOrder = useCallback(async () => {
-    const removePromises = cartItems.map((item) => removeFromCart(item.productId).unwrap().catch(() => {}));
+    const removePromises = cartItems.map((item) => removeFromCart(item.productId).unwrap().catch(() => { }));
     await Promise.all(removePromises);
     dispatch(clearCart());
     await refetch();
@@ -179,17 +179,17 @@ export function Cart({ isOpen, onOpenChange }: CartProps) {
 
     // Minimum order validation (dynamic per supplier)
     const ordersBySupplier = cartItems.reduce((acc: Record<string, { total: number; name: string; minOrder: number }>, item: CartItem) => {
-      const supplierId = typeof item.vendorId === 'object' && (item.vendorId as any)._id 
-        ? (item.vendorId as any)._id 
+      const supplierId = typeof item.vendorId === 'object' && (item.vendorId as any)._id
+        ? (item.vendorId as any)._id
         : item.vendorId;
-      
+
       if (!acc[supplierId]) acc[supplierId] = { total: 0, name: item.supplierName || 'Supplier', minOrder: item.minOrderValue || 1000 };
       acc[supplierId].total += item.price * item.quantity;
       return acc;
     }, {});
 
     const lowValueSuppliers = Object.values(ordersBySupplier).filter(s => s.total < s.minOrder);
-    
+
     if (lowValueSuppliers.length > 0) {
       const issues = lowValueSuppliers.map(s => `${s.name}: min ₹${s.minOrder.toLocaleString()}`).join(', ');
       toast.error(`One or more suppliers have a minimum order requirement.`, {

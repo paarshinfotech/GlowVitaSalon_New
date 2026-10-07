@@ -206,7 +206,7 @@ export function SubscriptionPlansDialog({
               sequence: ['block.upi', 'card', 'netbanking'],
             },
           },
-          modal: { 
+          modal: {
             ondismiss: () => {
               // Re-open dialog on cancel
               onOpenChange(true);

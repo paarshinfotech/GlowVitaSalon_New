@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { 
-  useUpdateDoctorMutation, 
-  useGetSubscriptionPlansQuery, 
-  useGetConsultationsQuery, 
-  useGetSuperDataQuery 
+import {
+  useUpdateDoctorMutation,
+  useGetSubscriptionPlansQuery,
+  useGetConsultationsQuery,
+  useGetSuperDataQuery
 } from '@repo/store/api';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@repo/ui/dialog';
@@ -20,8 +20,8 @@ import { Checkbox } from '@repo/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/ui/card';
 import { Badge } from '@repo/ui/badge';
 import { Switch } from '@repo/ui/switch';
-import { 
-  Trash2, UploadCloud, CheckCircle2, Users, Eye, EyeOff, Map, X, FileText, 
+import {
+  Trash2, UploadCloud, CheckCircle2, Users, Eye, EyeOff, Map, X, FileText,
   Clock, RefreshCw, MapPinIcon, MapPin, Zap, CreditCard, Smartphone, Landmark,
   User, Briefcase, Stethoscope, FileDown
 } from 'lucide-react';
@@ -111,19 +111,19 @@ interface DoctorEditFormProps {
 // ─── TABS ───────────────────────────────────────────────────────────────────
 
 // 1. Profile Tab (Editable)
-const ProfileTab = ({ 
-  formData, 
-  setFormData, 
-  onSave, 
-  isSaving 
-}: { 
-  formData: Doctor; 
-  setFormData: React.Dispatch<React.SetStateAction<Doctor>>; 
-  onSave: (data: Partial<Doctor>) => void; 
-  isSaving: boolean; 
+const ProfileTab = ({
+  formData,
+  setFormData,
+  onSave,
+  isSaving
+}: {
+  formData: Doctor;
+  setFormData: React.Dispatch<React.SetStateAction<Doctor>>;
+  onSave: (data: Partial<Doctor>) => void;
+  isSaving: boolean;
 }) => {
   const { data: superData = [], isLoading: isSuperDataLoading } = useGetSuperDataQuery(undefined);
-  
+
   const allSpecialties = useMemo(() => superData.filter((d: any) => d.type === 'specialization'), [superData]);
   const allSubSpecializations = useMemo(() => superData.filter((d: any) => d.type === 'subSpecialization'), [superData]);
   const allDiseases = useMemo(() => superData.filter((d: any) => d.type === 'disease'), [superData]);
@@ -391,23 +391,23 @@ const ProfileTab = ({
 };
 
 // 2. Clinic Details Tab (Editable)
-const ClinicDetailsTab = ({ 
-  formData, 
-  setFormData, 
-  onSave, 
-  isSaving 
-}: { 
-  formData: Doctor; 
-  setFormData: React.Dispatch<React.SetStateAction<Doctor>>; 
-  onSave: (data: Partial<Doctor>) => void; 
-  isSaving: boolean; 
+const ClinicDetailsTab = ({
+  formData,
+  setFormData,
+  onSave,
+  isSaving
+}: {
+  formData: Doctor;
+  setFormData: React.Dispatch<React.SetStateAction<Doctor>>;
+  onSave: (data: Partial<Doctor>) => void;
+  isSaving: boolean;
 }) => {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<GooglePlacesResult[]>([]);
   const [authError, setAuthError] = useState(false);
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
-  
+
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<google.maps.Map | null>(null);
   const marker = useRef<google.maps.Marker | null>(null);
@@ -829,16 +829,16 @@ const ClinicDetailsTab = ({
 };
 
 // 3. Assistant Tab (Editable)
-const AssistantTab = ({ 
-  formData, 
-  setFormData, 
-  onSave, 
-  isSaving 
-}: { 
-  formData: Doctor; 
-  setFormData: React.Dispatch<React.SetStateAction<Doctor>>; 
-  onSave: (data: Partial<Doctor>) => void; 
-  isSaving: boolean; 
+const AssistantTab = ({
+  formData,
+  setFormData,
+  onSave,
+  isSaving
+}: {
+  formData: Doctor;
+  setFormData: React.Dispatch<React.SetStateAction<Doctor>>;
+  onSave: (data: Partial<Doctor>) => void;
+  isSaving: boolean;
 }) => {
   return (
     <Card>
@@ -917,14 +917,14 @@ const AssistantTab = ({
 };
 
 // 4. Subscription Tab (Editable)
-const SubscriptionTab = ({ 
-  doctor, 
-  onSuccess, 
-  onClose 
-}: { 
-  doctor: Doctor; 
-  onSuccess?: () => void; 
-  onClose?: () => void; 
+const SubscriptionTab = ({
+  doctor,
+  onSuccess,
+  onClose
+}: {
+  doctor: Doctor;
+  onSuccess?: () => void;
+  onClose?: () => void;
 }) => {
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [selectedRenewalPlan, setSelectedRenewalPlan] = useState<any>(null);
@@ -1120,9 +1120,9 @@ const SubscriptionTab = ({
               {doctor.subscription?.endDate ? (() => {
                 const now = new Date();
                 const end = new Date(doctor.subscription.endDate);
-                now.setHours(0,0,0,0);
+                now.setHours(0, 0, 0, 0);
                 const endOnly = new Date(end);
-                endOnly.setHours(0,0,0,0);
+                endOnly.setHours(0, 0, 0, 0);
                 const diffTime = endOnly.getTime() - now.getTime();
                 const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
                 if (diffDays >= 0) return (
@@ -1391,8 +1391,8 @@ const DocumentsTab = ({ doctor }: { doctor: Doctor | null }) => {
 
 // 7. Patients Tab (View Only)
 const PatientsTab = ({ doctor }: { doctor: Doctor | null }) => {
-  const { data = [], isLoading } = useGetConsultationsQuery({ 
-    doctorId: doctor?._id || '' 
+  const { data = [], isLoading } = useGetConsultationsQuery({
+    doctorId: doctor?._id || ''
   }, { skip: !doctor?._id });
 
   const consultations = useMemo(() => {
@@ -1442,11 +1442,10 @@ const PatientsTab = ({ doctor }: { doctor: Doctor | null }) => {
                     <td className="py-2 px-4">{item.appointmentTime || 'N/A'}</td>
                     <td className="py-2 px-4 capitalize">{item.consultationType || 'Physical'}</td>
                     <td className="py-2 px-4">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        item.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                        item.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${item.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {item.status}
                       </span>
                     </td>
@@ -1516,37 +1515,37 @@ export function DoctorEditForm({ isOpen, onClose, doctor, onSuccess }: DoctorEdi
           </TabsList>
 
           <TabsContent value="profile" className="mt-4">
-            <ProfileTab 
-              formData={formData} 
-              setFormData={setFormData} 
-              onSave={handleSaveTab} 
-              isSaving={isSavingTab} 
+            <ProfileTab
+              formData={formData}
+              setFormData={setFormData}
+              onSave={handleSaveTab}
+              isSaving={isSavingTab}
             />
           </TabsContent>
 
           <TabsContent value="clinic" className="mt-4">
-            <ClinicDetailsTab 
-              formData={formData} 
-              setFormData={setFormData} 
-              onSave={handleSaveTab} 
-              isSaving={isSavingTab} 
+            <ClinicDetailsTab
+              formData={formData}
+              setFormData={setFormData}
+              onSave={handleSaveTab}
+              isSaving={isSavingTab}
             />
           </TabsContent>
 
           <TabsContent value="assistant" className="mt-4">
-            <AssistantTab 
-              formData={formData} 
-              setFormData={setFormData} 
-              onSave={handleSaveTab} 
-              isSaving={isSavingTab} 
+            <AssistantTab
+              formData={formData}
+              setFormData={setFormData}
+              onSave={handleSaveTab}
+              isSaving={isSavingTab}
             />
           </TabsContent>
 
           <TabsContent value="subscription" className="mt-4">
-            <SubscriptionTab 
-              doctor={doctor} 
-              onSuccess={onSuccess} 
-              onClose={onClose} 
+            <SubscriptionTab
+              doctor={doctor}
+              onSuccess={onSuccess}
+              onClose={onClose}
             />
           </TabsContent>
 
