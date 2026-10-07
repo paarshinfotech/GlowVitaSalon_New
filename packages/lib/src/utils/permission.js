@@ -36,6 +36,18 @@ export function hasPermission(user, permission) {
     }
   }
   
+  // Region alias: admin-roles permission also grants regions permission (grouped in navigation)
+  if (module === 'regions') {
+    if (user.permissions.includes(`admin-roles:${action}`) ||
+        user.permissions.includes('admin-roles:all') ||
+        user.permissions.includes('admin-roles')) {
+      return true;
+    }
+    if (action === 'view' && (user.permissions.includes('admin-roles:edit') || user.permissions.includes('admin-roles:delete'))) {
+      return true;
+    }
+  }
+
   // Legacy: check for module permission without action
   if (user.permissions.includes(module)) {
     return true;

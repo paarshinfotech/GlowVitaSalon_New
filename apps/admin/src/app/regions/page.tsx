@@ -22,6 +22,7 @@ import {
   useUpdateRegionMutation, 
   useDeleteRegionMutation 
 } from "@repo/store/services/api";
+import { toast } from "sonner";
 
 const RegionMapEditor = dynamic(() => import("../../components/RegionMapEditor"), { 
   loading: () => <div className="h-[400px] flex items-center justify-center bg-gray-100 rounded-lg"><Loader2 className="animate-spin" /> Map Loading...</div>,
@@ -100,12 +101,15 @@ export default function RegionsPage() {
 
       if (editingRegion) {
         await updateRegion({ id: editingRegion._id, ...payload }).unwrap();
+        toast.success("Region updated successfully");
       } else {
         await createRegion(payload).unwrap();
+        toast.success("Region created successfully");
       }
       handleCloseModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save region:", error);
+      toast.error(error?.data?.error || error?.data?.message || "Failed to save region");
     }
   };
 
@@ -113,8 +117,10 @@ export default function RegionsPage() {
     if (confirm("Are you sure you want to delete this region?")) {
       try {
         await deleteRegion(id).unwrap();
-      } catch (error) {
+        toast.success("Region deleted successfully");
+      } catch (error: any) {
         console.error("Failed to delete region:", error);
+        toast.error(error?.data?.error || error?.data?.message || "Failed to delete region");
       }
     }
   };
