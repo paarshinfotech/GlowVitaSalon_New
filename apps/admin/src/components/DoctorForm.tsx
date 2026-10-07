@@ -60,6 +60,24 @@ export interface Doctor {
   landline?: string;
   workingWithHospital?: boolean;
   videoConsultation?: boolean;
+  documents?: {
+    aadharCard?: string;
+    panCard?: string;
+    medicalRegCert?: string;
+    medicalDegreeCert?: string;
+    clinicDetails?: string;
+    otherDocs?: string[];
+    aadharCardStatus?: string;
+    panCardStatus?: string;
+    medicalRegCertStatus?: string;
+    medicalDegreeCertStatus?: string;
+    clinicDetailsStatus?: string;
+  };
+  subscription?: {
+    plan: string | null;
+    status: string;
+    expires: string | null;
+  };
 }
 
 interface DoctorFormProps {

@@ -60,7 +60,7 @@ export interface Doctor {
   registrationNumber: string;
   doctorType: string;
   specialties: string[];
-  subSpecializations: string[];
+  subSpecializations?: string[];
   diseases: string[];
   experience: string;
   clinicName: string;
@@ -1543,15 +1543,15 @@ export function DoctorEditForm({ isOpen, onClose, doctor, onSuccess }: DoctorEdi
           </TabsContent>
 
           <TabsContent value="subscription" className="mt-4">
-            <SubscriptionTab 
+            {doctor && <SubscriptionTab 
               doctor={doctor} 
               onSuccess={onSuccess} 
               onClose={onClose} 
-            />
+            />}
           </TabsContent>
 
           <TabsContent value="gallery" className="mt-4">
-            <GalleryTab doctor={doctor} />
+            {doctor && <GalleryTab doctor={doctor} />}
           </TabsContent>
 
           <TabsContent value="document" className="mt-4">
