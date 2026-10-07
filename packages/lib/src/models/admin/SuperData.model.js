@@ -15,6 +15,7 @@ const superDataSchema = new mongoose.Schema({
     required: true,
     enum: [
       'specialization',
+      'subSpecialization',
       'faqCategory',
       'designation',
       'smsType',
@@ -28,34 +29,18 @@ const superDataSchema = new mongoose.Schema({
       'disease',
       'supplier',
       'expenseType',
-      'paymentMode', // Added payment mode
-      'duration' // Added duration for service duration values
+      'paymentMode',
+      'duration'
     ],
+  },
+  image: {
+    type: String,
+    default: null,
   },
   parentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'SuperData',
     default: null,
-  },
-  // Additional fields for location hierarchy if needed, although parentId can handle it
-  countryId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'SuperData',
-    default: null,
-  },
-  stateId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'SuperData',
-    default: null,
-  },
-   doctorType: { // For 'specialization' type
-    type: String,
-    enum: ['Physician', 'Surgeon'],
-    required: function() { return this.type === 'specialization'; }
-  },
-  orderIndex: {
-    type: Number,
-    default: 0,
   },
   createdAt: {
     type: Date,

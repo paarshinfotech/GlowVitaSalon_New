@@ -14,17 +14,17 @@ export function useApiErrorHandler() {
   useEffect(() => {
     // Intercept fetch responses globally
     const originalFetch = window.fetch;
-    
+
     window.fetch = async (...args) => {
       let response;
       let method = 'GET';
-      
+
       if (args[0] instanceof Request) {
         method = args[0].method.toUpperCase();
       } else if (typeof args[0] === 'string' || args[0] instanceof URL) {
         method = (args[1]?.method || 'GET').toUpperCase();
       }
-      
+
       try {
         response = await originalFetch(...args);
       } catch (error) {
@@ -45,7 +45,7 @@ export function useApiErrorHandler() {
         try {
           const clonedResponse = response.clone();
           const contentType = response.headers.get('content-type');
-          
+
           let data: any = {};
           if (contentType && contentType.includes('application/json')) {
             try {
@@ -89,7 +89,7 @@ export function useApiErrorHandler() {
           console.error('Error in fetch interceptor:', error);
         }
       }
-      
+
       return response;
     };
 

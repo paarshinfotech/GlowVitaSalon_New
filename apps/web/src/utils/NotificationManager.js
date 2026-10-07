@@ -28,7 +28,7 @@ class NotificationManager {
         const triggerSound = (payload) => {
           console.log('[NotificationManager] SIGNAL!', payload);
           this.playNotificationSound();
-          
+
           // BROADCAST to all active components (Toast, Bell Icon, etc.)
           this.listeners.forEach(callback => {
             try { callback(payload); } catch (e) { console.error('Listener Error:', e); }
@@ -80,7 +80,7 @@ class NotificationManager {
         this.audioContext = new AudioCtx();
       }
       if (this.audioContext.state === 'suspended') await this.audioContext.resume();
-      
+
       const ctx = this.audioContext;
       const now = ctx.currentTime;
       const osc1 = ctx.createOscillator();

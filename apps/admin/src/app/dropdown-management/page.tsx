@@ -51,8 +51,10 @@ interface DropdownItem {
     name: string;
     description?: string;
     type: string;
-    parentId?: string;
-    doctorType?: 'Physician' | 'Surgeon';
+    image?: string | null;
+    parentId?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 interface LocationItem extends DropdownItem {
@@ -1163,57 +1165,60 @@ const ProductMasterManager = () => {
     );
 };
 
-const HierarchicalManager = ({ title, description, data, onUpdate, isLoading }: { title: string; description: string; data: DropdownItem[]; onUpdate: (item: Partial<DropdownItem> & { newIndex?: number }, action: 'add' | 'edit' | 'delete' | 'move') => void; isLoading: boolean; }) => {
+const SpecializationManager = ({
+    items,
+    onUpdate,
+    isLoading,
+}: {
+    items: DropdownItem[];
+    onUpdate: (item: Partial<DropdownItem> & { newIndex?: number }, action: 'add' | 'edit' | 'delete' | 'move') => void;
+    isLoading: boolean;
+}) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState<Partial<DropdownItem> | null>(null);
-    const [modalConfig, setModalConfig] = useState<{ type: string; parentId?: string; parentName?: string; action: 'add' | 'edit' }>({ type: 'specialization', action: 'add' });
-    const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [imageBase64, setImageBase64] = useState<string | null>(null);
 
-    const [selectedDoctorType, setSelectedDoctorType] = useState<'Physician' | 'Surgeon'>();
-
-    const specializations = useMemo(() => [...data.filter(item => item.type === 'specialization')].reverse(), [data]);
-
-    const getChildren = (parentId: string) => {
-        return [...data.filter(item => item.type === 'disease' && item.parentId === parentId)].reverse();
-    }
-
-    const handleOpenModal = (action: 'add' | 'edit', type: string, item?: Partial<DropdownItem>, parentId?: string, parentName?: string) => {
-        setCurrentItem(item || null);
-        if (type === 'specialization' && item?.doctorType) {
-            setSelectedDoctorType(item.doctorType);
-        } else {
-            setSelectedDoctorType(undefined);
-        }
-        setModalConfig({ type, parentId, parentName, action });
+    const handleOpenModal = (item: Partial<DropdownItem> | null = null) => {
+        setCurrentItem(item);
+        setName(item?.name || '');
+        setDescription(item?.description || '');
+        setImageBase64(item?.image || null);
         setIsModalOpen(true);
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImageBase64(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const form = e.currentTarget;
 
-        const name = (form.elements.namedItem('name') as HTMLInputElement).value;
-        const description = (form.elements.namedItem('description') as HTMLTextAreaElement).value;
-
-        if (modalConfig.type === 'specialization' && !selectedDoctorType) {
-            toast.error("Doctor Type is required for a specialization.");
-            return;
-        }
-
+        const action = currentItem?._id ? 'edit' : 'add';
         const itemData: Partial<DropdownItem> = {
             _id: currentItem?._id,
             name,
             description,
-            type: modalConfig.type,
-            parentId: modalConfig.parentId,
-            // Include doctorType only for specializations
-            doctorType: modalConfig.type === 'specialization' && selectedDoctorType && (selectedDoctorType === 'Physician' || selectedDoctorType === 'Surgeon') ? selectedDoctorType : undefined,
+            type: 'specialization',
+            image: imageBase64 || null,
+            parentId: null,
         };
 
-        await onUpdate(itemData, modalConfig.action);
+        await onUpdate(itemData, action);
         setIsModalOpen(false);
         setCurrentItem(null);
+        setName('');
+        setDescription('');
+        setImageBase64(null);
     };
 
     const handleDeleteClick = (item: DropdownItem) => {
@@ -1229,208 +1234,581 @@ const HierarchicalManager = ({ title, description, data, onUpdate, isLoading }: 
         setCurrentItem(null);
     };
 
-    const toggleExpand = (id: string) => {
-        setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
-    };
-
-    const handleMove = (items: DropdownItem[], index: number, direction: 'up' | 'down') => {
+    const handleMove = (index: number, direction: 'up' | 'down') => {
         const item = items[index];
         const newIndex = direction === 'up' ? index - 1 : index + 1;
         if (newIndex < 0 || newIndex >= items.length) return;
         onUpdate({ ...item, newIndex }, 'move');
     };
 
-    const renderItem = (item: DropdownItem, index: number, siblings: DropdownItem[], level: number) => {
-        const children = getChildren(item._id);
-        const isExpanded = expandedItems[item._id];
-
-        const isFirst = index === 0;
-        const isLast = index === siblings.length - 1;
-
-        return (
-            <div key={item._id} className={level === 0 ? "border-t" : "border-t border-dashed"}>
-                <div className="flex items-center gap-2 py-2 pr-2" style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}>
-                    {item.type === 'specialization' && (
-                        <button onClick={() => toggleExpand(item._id)} className="p-1 hover:bg-secondary rounded-full">
-                            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        </button>
-                    )}
-                    <span className="flex-grow font-medium">{item.name} {item.doctorType && <Badge variant="outline">{item.doctorType}</Badge>}</span>
-
-                    {/* Move buttons */}
-                    <div className="flex items-center gap-1 mr-2 border-r pr-2 shadow-sm">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            disabled={isFirst}
-                            onClick={() => handleMove(siblings, index, 'up')}
-                        >
-                            <ArrowUp className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            disabled={isLast}
-                            onClick={() => handleMove(siblings, index, 'down')}
-                        >
-                            <ArrowDown className="h-3.5 w-3.5" />
-                        </Button>
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle>Doctor Specializations</CardTitle>
+                        <CardDescription>Manage main doctor specializations.</CardDescription>
                     </div>
-
-                    {item.type === 'specialization' && (
-                        <Button variant="outline" size="sm" className="h-7 px-2" onClick={() => handleOpenModal('add', 'disease', undefined, item._id, item.name)}>
-                            <Plus className="mr-1 h-3 w-3" /> Add Disease
-                        </Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenModal('edit', item.type, item, item.parentId)}>
-                        <Edit className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteClick(item)}>
-                        <Trash2 className="h-3.5 w-3.5" />
+                    <Button onClick={() => handleOpenModal()} disabled={isLoading}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Specialization
                     </Button>
                 </div>
-                {isExpanded && item.type === 'specialization' && (
-                    <div className="ml-4 pl-2">
-                        {children.length > 0 ? children.map((child, idx) => renderItem(child, idx, children, level + 1)) : <div className="pl-8 text-sm text-muted-foreground py-1">No diseases added yet.</div>}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    if (isLoading) {
-        return (
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <Skeleton className="h-6 w-48" />
-                            <Skeleton className="h-4 w-64 mt-2" />
-                        </div>
-                        <Skeleton className="h-9 w-40" />
-                    </div>
-                </CardHeader>
-                <CardContent className="border rounded-md">
-                    <div className="space-y-2">
-                        {[...Array(3)].map((_, i) => (
-                            <div key={i} className="border-t first:border-t-0">
-                                <div className="flex items-center justify-between py-3 px-4">
-                                    <div className="flex items-center gap-3">
-                                        <Skeleton className="h-4 w-4" />
-                                        <Skeleton className="h-4 w-32" />
-                                        <Skeleton className="h-5 w-16 rounded-full" />
-                                    </div>
-                                    <div className="flex gap-1">
-                                        <Skeleton className="h-7 w-24" />
-                                        <Skeleton className="h-7 w-7" />
-                                        <Skeleton className="h-7 w-7" />
-                                    </div>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    {items.map((item: DropdownItem, index: number) => (
+                        <div key={item._id} className="group flex items-center gap-3 bg-secondary/50 hover:bg-secondary p-2.5 rounded-md transition-colors">
+                            {item.image ? (
+                                <img src={item.image} alt={item.name} className="h-9 w-9 rounded-md object-cover border shrink-0" />
+                            ) : (
+                                <div className="h-9 w-9 rounded-md bg-secondary flex items-center justify-center border shrink-0 text-muted-foreground text-xs font-semibold">
+                                    {item.name?.charAt(0) || 'S'}
                                 </div>
-                                <div className="ml-4 pl-2 space-y-1">
-                                    {[...Array(2)].map((_, j) => (
-                                        <div key={j} className="border-t border-dashed">
-                                            <div className="flex items-center justify-between py-2 px-4 pl-8">
-                                                <Skeleton className="h-4 w-28" />
-                                                <div className="flex gap-1">
-                                                    <Skeleton className="h-7 w-7" />
-                                                    <Skeleton className="h-7 w-7" />
-                                                </div>
-                                            </div>
+                            )}
+                            <div className="flex-grow min-w-0">
+                                <p className="font-medium text-sm truncate">{item.name}</p>
+                                {item.description && (
+                                    <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                                )}
+                            </div>
+                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMove(index, 'up')} disabled={index === 0}>
+                                    <ArrowUp className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMove(index, 'down')} disabled={index === items.length - 1}>
+                                    <ArrowDown className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenModal(item)} disabled={isLoading}>
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteClick(item)} disabled={isLoading}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                    {items.length === 0 && !isLoading && (
+                        <div className="text-center py-8 text-muted-foreground">
+                            No specializations found.
+                        </div>
+                    )}
+                </div>
+
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogContent className="sm:max-w-lg">
+                        <form onSubmit={handleSave}>
+                            <DialogHeader>
+                                <DialogTitle>{currentItem?._id ? 'Edit' : 'Add'} Specialization</DialogTitle>
+                                <DialogDescription>
+                                    {currentItem?._id ? `Editing "${currentItem.name}".` : 'Add a new doctor specialization.'}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="spec-name">Specialization Name *</Label>
+                                    <Input id="spec-name" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Dermatologist" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="spec-desc">Description</Label>
+                                    <Textarea id="spec-desc" name="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g., Dermatologist" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="spec-img">Specialization Image (Optional)</Label>
+                                    <Input id="spec-img" name="image" type="file" accept="image/*" onChange={handleImageChange} />
+                                    {imageBase64 && (
+                                        <div className="mt-2 flex items-center gap-3">
+                                            <img src={imageBase64} alt="Preview" className="h-16 w-16 rounded-md object-cover border" />
+                                            <Button type="button" variant="outline" size="sm" onClick={() => setImageBase64(null)}>
+                                                Remove Image
+                                            </Button>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
-        );
-    }
+                            <DialogFooter>
+                                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                                <Button type="submit">Save</Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Delete Specialization?</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to delete "{currentItem?.name}"? This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button variant="secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
+                            <Button variant="destructive" onClick={handleConfirmDelete}>Delete</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </CardContent>
+        </Card>
+    );
+};
+
+const SubSpecializationManager = ({
+    items,
+    specializations,
+    onUpdate,
+    isLoading,
+}: {
+    items: DropdownItem[];
+    specializations: DropdownItem[];
+    onUpdate: (item: Partial<DropdownItem> & { newIndex?: number }, action: 'add' | 'edit' | 'delete' | 'move') => void;
+    isLoading: boolean;
+}) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [currentItem, setCurrentItem] = useState<Partial<DropdownItem> | null>(null);
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [selectedParentId, setSelectedParentId] = useState<string>('');
+    const [imageBase64, setImageBase64] = useState<string | null>(null);
+
+    const handleOpenModal = (item: Partial<DropdownItem> | null = null) => {
+        setCurrentItem(item);
+        setName(item?.name || '');
+        setDescription(item?.description || '');
+        setSelectedParentId(item?.parentId || specializations[0]?._id || '');
+        setImageBase64(item?.image || null);
+        setIsModalOpen(true);
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImageBase64(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        if (!selectedParentId) {
+            toast.error("Please select a parent Specialization.");
+            return;
+        }
+
+        const action = currentItem?._id ? 'edit' : 'add';
+        const itemData: Partial<DropdownItem> = {
+            _id: currentItem?._id,
+            name,
+            description,
+            type: 'subSpecialization',
+            image: imageBase64 || null,
+            parentId: selectedParentId,
+        };
+
+        await onUpdate(itemData, action);
+        setIsModalOpen(false);
+        setCurrentItem(null);
+        setName('');
+        setDescription('');
+        setImageBase64(null);
+        setSelectedParentId('');
+    };
+
+    const handleDeleteClick = (item: DropdownItem) => {
+        setCurrentItem(item);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (currentItem?._id) {
+            onUpdate({ _id: currentItem._id }, 'delete');
+        }
+        setIsDeleteModalOpen(false);
+        setCurrentItem(null);
+    };
+
+    const handleMove = (index: number, direction: 'up' | 'down') => {
+        const item = items[index];
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= items.length) return;
+        onUpdate({ ...item, newIndex }, 'move');
+    };
 
     return (
         <Card>
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <div>
-                        <CardTitle>{title}</CardTitle>
-                        <CardDescription>{description}</CardDescription>
+                        <CardTitle>Doctor Sub-Specializations</CardTitle>
+                        <CardDescription>Manage sub-specializations linked to a specialization category.</CardDescription>
                     </div>
-                    <Button onClick={() => handleOpenModal('add', 'specialization')}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Specialization
+                    <Button onClick={() => handleOpenModal()} disabled={isLoading || specializations.length === 0}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Sub-Specialization
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent className="border rounded-md">
-                {isLoading ? <div className="text-center p-4">Loading...</div> :
-                    specializations.length === 0 ? <div className="text-center p-8 text-muted-foreground">No specializations found.</div> :
-                        specializations.map((item, idx) => renderItem(item, idx, specializations, 0))}
-            </CardContent>
+            <CardContent>
+                <div className="space-y-2">
+                    {items.map((item: DropdownItem, index: number) => {
+                        const parentSpec = specializations.find(s => s._id === item.parentId);
+                        return (
+                            <div key={item._id} className="group flex items-center gap-3 bg-secondary/50 hover:bg-secondary p-2.5 rounded-md transition-colors">
+                                {item.image ? (
+                                    <img src={item.image} alt={item.name} className="h-9 w-9 rounded-md object-cover border shrink-0" />
+                                ) : (
+                                    <div className="h-9 w-9 rounded-md bg-secondary flex items-center justify-center border shrink-0 text-muted-foreground text-xs font-semibold">
+                                        {item.name?.charAt(0) || 'SS'}
+                                    </div>
+                                )}
+                                <div className="flex-grow min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-medium text-sm truncate">{item.name}</p>
+                                        {parentSpec && (
+                                            <Badge variant="outline" className="text-xs py-0 px-2 font-normal text-muted-foreground">
+                                                {parentSpec.name}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {item.description && (
+                                        <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                                    )}
+                                </div>
+                                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMove(index, 'up')} disabled={index === 0}>
+                                        <ArrowUp className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMove(index, 'down')} disabled={index === items.length - 1}>
+                                        <ArrowDown className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenModal(item)} disabled={isLoading}>
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteClick(item)} disabled={isLoading}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {items.length === 0 && !isLoading && (
+                        <div className="text-center py-8 text-muted-foreground">
+                            {specializations.length === 0 ? 'Please add a Specialization first.' : 'No sub-specializations found.'}
+                        </div>
+                    )}
+                </div>
 
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <form onSubmit={handleSave}>
-                        <DialogHeader>
-                            <DialogTitle>
-                                {modalConfig.action === 'add' ? 'Add New' : 'Edit'} {modalConfig.type.replace(/([A-Z])/g, ' $1').trim()}
-                            </DialogTitle>
-                        </DialogHeader>
-                        <div className="py-4 space-y-4">
-                            {modalConfig.type === 'specialization' && (
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogContent className="sm:max-w-lg">
+                        <form onSubmit={handleSave}>
+                            <DialogHeader>
+                                <DialogTitle>{currentItem?._id ? 'Edit' : 'Add'} Sub-Specialization</DialogTitle>
+                                <DialogDescription>
+                                    {currentItem?._id ? `Editing "${currentItem.name}".` : 'Add a new doctor sub-specialization.'}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="doctorType">Doctor Type *</Label>
+                                    <Label htmlFor="subspec-parent">Specialization Category *</Label>
                                     <Select
-                                        value={selectedDoctorType}
-                                        onValueChange={(value) => setSelectedDoctorType(value as 'Physician' | 'Surgeon')}
+                                        value={selectedParentId}
+                                        onValueChange={setSelectedParentId}
+                                        required
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a Doctor Type" />
+                                        <SelectTrigger id="subspec-parent">
+                                            <SelectValue placeholder="Select Specialization" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Physician">Physician</SelectItem>
-                                            <SelectItem value="Surgeon">Surgeon</SelectItem>
+                                            {specializations.map((spec) => (
+                                                <SelectItem key={spec._id} value={spec._id}>
+                                                    {spec.name}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
-                            )}
-                            {modalConfig.type === 'disease' && modalConfig.parentId && (
                                 <div className="space-y-2">
-                                    <Label>Parent Specialization</Label>
-                                    <Input value={modalConfig.parentName} readOnly disabled />
+                                    <Label htmlFor="subspec-name">Sub-Specialization Name *</Label>
+                                    <Input id="subspec-name" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Cosmetic Dermatology" required />
                                 </div>
-                            )}
-                            <div className="space-y-2">
-                                <Label htmlFor="name">{modalConfig.type.replace(/([A-Z])/g, ' $1').trim()} Name</Label>
-                                <Input id="name" name="name" defaultValue={currentItem?.name || ''} required />
+                                <div className="space-y-2">
+                                    <Label htmlFor="subspec-desc">Description</Label>
+                                    <Textarea id="subspec-desc" name="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description..." />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="subspec-img">Sub-Specialization Image (Optional)</Label>
+                                    <Input id="subspec-img" name="image" type="file" accept="image/*" onChange={handleImageChange} />
+                                    {imageBase64 && (
+                                        <div className="mt-2 flex items-center gap-3">
+                                            <img src={imageBase64} alt="Preview" className="h-16 w-16 rounded-md object-cover border" />
+                                            <Button type="button" variant="outline" size="sm" onClick={() => setImageBase64(null)}>
+                                                Remove Image
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea id="description" name="description" defaultValue={currentItem?.description || ''} />
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                            <Button type="submit">Save</Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+                            <DialogFooter>
+                                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                                <Button type="submit">Save</Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
 
-            <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete Item?</DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to delete "{(currentItem as DropdownItem)?.name}"? This action cannot be undone.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
-                        <Button variant="destructive" onClick={handleConfirmDelete}>Delete</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Delete Sub-Specialization?</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to delete "{currentItem?.name}"? This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button variant="secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
+                            <Button variant="destructive" onClick={handleConfirmDelete}>Delete</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </CardContent>
+        </Card>
+    );
+};
+
+const DiseaseManager = ({
+    items,
+    subSpecializations,
+    specializations,
+    onUpdate,
+    isLoading,
+}: {
+    items: DropdownItem[];
+    subSpecializations: DropdownItem[];
+    specializations: DropdownItem[];
+    onUpdate: (item: Partial<DropdownItem> & { newIndex?: number }, action: 'add' | 'edit' | 'delete' | 'move') => void;
+    isLoading: boolean;
+}) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [currentItem, setCurrentItem] = useState<Partial<DropdownItem> | null>(null);
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [selectedParentId, setSelectedParentId] = useState<string>('');
+    const [imageBase64, setImageBase64] = useState<string | null>(null);
+
+    const handleOpenModal = (item: Partial<DropdownItem> | null = null) => {
+        setCurrentItem(item);
+        setName(item?.name || '');
+        setDescription(item?.description || '');
+        setSelectedParentId(item?.parentId || subSpecializations[0]?._id || '');
+        setImageBase64(item?.image || null);
+        setIsModalOpen(true);
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImageBase64(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        if (!selectedParentId) {
+            toast.error("Please select a parent Sub-Specialization.");
+            return;
+        }
+
+        const action = currentItem?._id ? 'edit' : 'add';
+        const itemData: Partial<DropdownItem> = {
+            _id: currentItem?._id,
+            name,
+            description,
+            type: 'disease',
+            image: imageBase64 || null,
+            parentId: selectedParentId,
+        };
+
+        await onUpdate(itemData, action);
+        setIsModalOpen(false);
+        setCurrentItem(null);
+        setName('');
+        setDescription('');
+        setImageBase64(null);
+        setSelectedParentId('');
+    };
+
+    const handleDeleteClick = (item: DropdownItem) => {
+        setCurrentItem(item);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (currentItem?._id) {
+            onUpdate({ _id: currentItem._id }, 'delete');
+        }
+        setIsDeleteModalOpen(false);
+        setCurrentItem(null);
+    };
+
+    const handleMove = (index: number, direction: 'up' | 'down') => {
+        const item = items[index];
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= items.length) return;
+        onUpdate({ ...item, newIndex }, 'move');
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle>Diseases & Conditions</CardTitle>
+                        <CardDescription>Manage diseases linked to a sub-specialization category.</CardDescription>
+                    </div>
+                    <Button onClick={() => handleOpenModal()} disabled={isLoading || subSpecializations.length === 0}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Disease
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    {items.map((item: DropdownItem, index: number) => {
+                        const parentSub = subSpecializations.find(s => s._id === item.parentId);
+                        const parentSpec = parentSub ? specializations.find(s => s._id === parentSub.parentId) : null;
+                        return (
+                            <div key={item._id} className="group flex items-center gap-3 bg-secondary/50 hover:bg-secondary p-2.5 rounded-md transition-colors">
+                                {item.image ? (
+                                    <img src={item.image} alt={item.name} className="h-9 w-9 rounded-md object-cover border shrink-0" />
+                                ) : (
+                                    <div className="h-9 w-9 rounded-md bg-secondary flex items-center justify-center border shrink-0 text-muted-foreground text-xs font-semibold">
+                                        {item.name?.charAt(0) || 'D'}
+                                    </div>
+                                )}
+                                <div className="flex-grow min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <p className="font-medium text-sm truncate">{item.name}</p>
+                                        {parentSub && (
+                                            <Badge variant="outline" className="text-xs py-0 px-2 font-normal text-muted-foreground">
+                                                {parentSub.name}{parentSpec ? ` (${parentSpec.name})` : ''}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {item.description && (
+                                        <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                                    )}
+                                </div>
+                                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMove(index, 'up')} disabled={index === 0}>
+                                        <ArrowUp className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMove(index, 'down')} disabled={index === items.length - 1}>
+                                        <ArrowDown className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenModal(item)} disabled={isLoading}>
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteClick(item)} disabled={isLoading}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {items.length === 0 && !isLoading && (
+                        <div className="text-center py-8 text-muted-foreground">
+                            {subSpecializations.length === 0 ? 'Please add a Sub-Specialization first.' : 'No diseases found.'}
+                        </div>
+                    )}
+                </div>
+
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogContent className="sm:max-w-lg">
+                        <form onSubmit={handleSave}>
+                            <DialogHeader>
+                                <DialogTitle>{currentItem?._id ? 'Edit' : 'Add'} Disease</DialogTitle>
+                                <DialogDescription>
+                                    {currentItem?._id ? `Editing "${currentItem.name}".` : 'Add a new disease or condition.'}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="disease-parent">Sub-Specialization Category *</Label>
+                                    <Select
+                                        value={selectedParentId}
+                                        onValueChange={setSelectedParentId}
+                                        required
+                                    >
+                                        <SelectTrigger id="disease-parent">
+                                            <SelectValue placeholder="Select Sub-Specialization" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {subSpecializations.map((sub) => {
+                                                const parentSpec = specializations.find(s => s._id === sub.parentId);
+                                                return (
+                                                    <SelectItem key={sub._id} value={sub._id}>
+                                                        {sub.name} {parentSpec ? `(${parentSpec.name})` : ''}
+                                                    </SelectItem>
+                                                );
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="disease-name">Disease Name *</Label>
+                                    <Input id="disease-name" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Acne & Rosacea" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="disease-desc">Description</Label>
+                                    <Textarea id="disease-desc" name="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description..." />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="disease-img">Disease Image (Optional)</Label>
+                                    <Input id="disease-img" name="image" type="file" accept="image/*" onChange={handleImageChange} />
+                                    {imageBase64 && (
+                                        <div className="mt-2 flex items-center gap-3">
+                                            <img src={imageBase64} alt="Preview" className="h-16 w-16 rounded-md object-cover border" />
+                                            <Button type="button" variant="outline" size="sm" onClick={() => setImageBase64(null)}>
+                                                Remove Image
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                                <Button type="submit">Save</Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Delete Disease?</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to delete "{currentItem?.name}"? This action cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button variant="secondary" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
+                            <Button variant="destructive" onClick={handleConfirmDelete}>Delete</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </CardContent>
         </Card>
     );
 };
@@ -1575,10 +1953,21 @@ export default function DropdownManagementPage() {
 
                 <TabsContent value="doctors">
                     <div className="space-y-8">
-                        <HierarchicalManager
-                            title="Doctor Specialization Management"
-                            description="Manage doctor types, their specializations, and associated diseases."
-                            data={data}
+                        <SpecializationManager
+                            items={[...data.filter((item: DropdownItem) => item.type === 'specialization')].reverse()}
+                            onUpdate={handleUpdate}
+                            isLoading={isLoading}
+                        />
+                        <SubSpecializationManager
+                            items={[...data.filter((item: DropdownItem) => item.type === 'subSpecialization')].reverse()}
+                            specializations={[...data.filter((item: DropdownItem) => item.type === 'specialization')]}
+                            onUpdate={handleUpdate}
+                            isLoading={isLoading}
+                        />
+                        <DiseaseManager
+                            items={[...data.filter((item: DropdownItem) => item.type === 'disease')].reverse()}
+                            subSpecializations={[...data.filter((item: DropdownItem) => item.type === 'subSpecialization')]}
+                            specializations={[...data.filter((item: DropdownItem) => item.type === 'specialization')]}
                             onUpdate={handleUpdate}
                             isLoading={isLoading}
                         />
